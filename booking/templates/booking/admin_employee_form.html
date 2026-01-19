@@ -1,0 +1,101 @@
+{% extends 'booking/base.html' %}
+{% load form_extras %}
+{% block title %}จัดการพนักงาน - ระบบจองรถ กดส.{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">
+    {% if mode == 'create' %}เพิ่มพนักงานใหม่{% else %}แก้ไขข้อมูลพนักงาน{% endif %}
+  </h3>
+</div>
+
+<div class="card shadow-sm border-0" style="border-radius: 20px;">
+  <div class="card-body p-4">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} py-2">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" id="employee-form">
+      {% csrf_token %}
+
+      <h5 class="mb-3 fw-semibold">ข้อมูลพนักงาน</h5>
+
+      <p class="text-muted small">
+        รหัสประจำตัวพนักงานจะถูกใช้เป็น <strong>username</strong> และใช้เป็น
+        <strong>รหัสผ่านเริ่มต้น</strong> สำหรับเข้าสู่ระบบ (ธุรการสามารถเปลี่ยนภายหลังได้)
+      </p>
+
+      <div class="row g-3">
+
+        <!-- รหัสพนักงาน -->
+        <div class="col-md-3">
+          <label class="form-label">{{ form.employee_code.label }}</label>
+          {{ form.employee_code|add_class:"form-control" }}
+          <div class="form-text">เช่น 62001234</div>
+          {{ form.employee_code.errors }}
+        </div>
+
+        <!-- ชื่อ -->
+        <div class="col-md-3">
+          <label class="form-label">{{ form.first_name.label }}</label>
+          {{ form.first_name|add_class:"form-control" }}
+          {{ form.first_name.errors }}
+        </div>
+
+        <!-- สกุล -->
+        <div class="col-md-3">
+          <label class="form-label">{{ form.last_name.label }}</label>
+          {{ form.last_name|add_class:"form-control" }}
+          {{ form.last_name.errors }}
+        </div>
+
+        <!-- บทบาทในระบบ -->
+        <div class="col-md-3">
+          <label class="form-label">{{ form.role.label }}</label>
+          {{ form.role|add_class:"form-select" }}
+          {{ form.role.errors }}
+        </div>
+
+        <!-- กอง -->
+        <div class="col-md-4 mt-3">
+          <label class="form-label">{{ form.division.label }}</label>
+          {{ form.division|add_class:"form-select" }}
+          {{ form.division.errors }}
+        </div>
+
+        <!-- แผนก -->
+        <div class="col-md-4 mt-3">
+          <label class="form-label">{{ form.department.label }}</label>
+          {{ form.department|add_class:"form-select" }}
+          {{ form.department.errors }}
+        </div>
+
+        <!-- ตำแหน่ง -->
+        <div class="col-md-4 mt-3">
+          <label class="form-label">{{ form.position.label }}</label>
+          {{ form.position|add_class:"form-select" }}
+          {{ form.position.errors }}
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="d-flex justify-content-between">
+        <div>
+          <a href="{% url 'booking:admin_employee_list' %}" class="btn btn-outline-secondary">
+            ย้อนกลับ
+          </a>
+        </div>
+        <button type="submit" class="btn btn-primary px-4">
+          บันทึกข้อมูลพนักงาน
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

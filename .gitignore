@@ -1,0 +1,21 @@
+# Virtual env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Django / secrets / local data
+db.sqlite3
+*.sqlite3
+.env
+
+# Windows junk
+Thumbs.db
+*.lnk
+
+# Optional: editor/OS
+.vscode/
+.DS_Store

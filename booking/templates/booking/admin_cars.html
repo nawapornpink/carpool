@@ -1,0 +1,89 @@
+{% extends 'booking/base.html' %}
+{% block title %}จัดการรถยนต์ - ระบบจองรถ กดส.{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">รายการรถราชการ กดส. เขต 1 (อุดรธานี)</h3>
+
+<div class="card card-rounded shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title mb-0">รถทั้งหมดในระบบ</h5>
+      <a href="{% url 'booking:admin_car_create' %}" class="btn btn-primary btn-sm">
+        + เพิ่มรถใหม่
+      </a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>ทะเบียนรถ</th>
+            <th>ยี่ห้อ / รุ่น</th>
+            <th class="text-center">ที่นั่ง</th>
+            <th>รูปแบบรถ</th>
+            <th>สถานะ</th>
+            <th>สีปฏิทิน</th>
+            <th class="text-end">การจัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in cars %}
+            <tr>
+              <td>{{ c.display_plate }}</td>
+              <td>{{ c.brand_name }} {{ c.model_name }}</td>
+              <td class="text-center">{{ c.seat_count }}</td>
+              <td>
+                {% if c.usage_type == 'POOL' %}
+                  รถเช่ากฟฉ.1
+                {% elif c.usage_type == 'OFFICE' %}
+                  รถประจำกอง/ฝ่าย
+                {% elif c.usage_type == 'INSPECT' %}
+                  รถตรวจการ/ออกตรวจพื้นที่
+                {% else %}
+                  อื่น ๆ
+                {% endif %}
+              </td>
+              <td>
+                {% if c.status == 'READY' %}
+                  <span class="badge bg-success">พร้อมใช้งาน</span>
+                {% elif c.status == 'MAINTENANCE' %}
+                  <span class="badge bg-warning text-dark">ส่งซ่อม</span>
+                {% elif c.status == 'OUT_OF_SERVICE' %}
+                  <span class="badge bg-secondary">งดใช้งาน</span>
+                {% elif c.status == 'RETIRED' %}
+                  <span class="badge bg-dark">ยกเลิกใช้งาน</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge rounded-pill" style="background-color: {{ c.color_code }};">&nbsp;&nbsp;</span>
+              </td>
+              <td class="text-end">
+                  <a href="{% url 'booking:admin_car_edit' c.id %}" class="btn btn-outline-primary btn-sm">
+                    แก้ไข
+                  </a>
+
+                  <form method="post"
+                        action="{% url 'booking:admin_car_delete' c.id %}"
+                        class="d-inline"
+                        onsubmit="return confirm('ยืนยันการลบรถคันนี้หรือไม่?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                      ลบ
+                    </button>
+                  </form>
+                </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted">
+                ยังไม่มีข้อมูลรถในระบบ
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

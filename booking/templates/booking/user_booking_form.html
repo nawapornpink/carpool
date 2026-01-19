@@ -1,0 +1,282 @@
+{% extends 'booking/base.html' %}
+{% load static %}
+
+{% block title %}จองรถ - ระบบจองรถ กดส.{% endblock %}
+
+{% block extra_head %}
+  {{ block.super }}
+
+  <style>
+    body { background-color: #f5f7fb; }
+    .page-inner { margin-top: 4.5rem; margin-bottom: 3rem; }
+    .card-soft{
+      border-radius: 26px; border: none;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+      background: #ffffff; overflow: hidden;
+    }
+    .card-form-header{
+      padding: 1.6rem 2rem 1.1rem;
+      background: linear-gradient(
+        135deg,
+        var(--pea-purple),
+        #5f034e
+      );
+      color: #ffffff;
+      border-bottom: 3px solid var(--pea-gold);
+    }
+
+
+    .card-form-header h4{ font-weight: 700; margin-bottom: .25rem; }
+    .card-form-body{ padding: 1.8rem 2rem 2rem; }
+    .form-label{ font-size: .9rem; font-weight: 600; color: #111827; }
+    .form-control,.form-select{
+      border-radius: 14px; font-size: .88rem; border-color: #e5e7eb;
+    }
+    .form-control:focus,.form-select:focus{
+      box-shadow: 0 0 0 .15rem rgba(37, 99, 235, 0.18);
+      border-color: #2563eb;
+    }
+    .form-text{ font-size: .78rem; color: #6b7280; }
+    .section-caption{
+      font-size: .78rem; text-transform: uppercase;
+      letter-spacing: .06em; color: #9ca3af; font-weight: 600;
+    }
+    .btn-primary-rounded{
+      border-radius: 999px; padding: .65rem 1.9rem;
+      font-weight: 600; font-size: .9rem;
+      display: inline-flex; align-items: center; gap: .4rem;
+    }
+    .btn-primary-rounded i{ font-size: 1rem; }
+    .chip-note{
+      border-radius: 999px; background: #eff6ff;
+      padding: .35rem .9rem; font-size: .8rem; color: #1d4ed8;
+    }
+    .muted-pill{
+      border-radius: 999px; background: #f1f5f9;
+      padding: .35rem .9rem; font-size: .8rem; color: #475569;
+    }
+    @media (max-width: 767.98px){
+      .card-form-body{ padding: 1.5rem 1.25rem 1.75rem; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container page-inner">
+
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card card-soft">
+    <div class="card-form-header">
+      <h4>ฟอร์มจองรถ</h4>
+    </div>
+
+    <div class="card-form-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <span class="section-caption">รายละเอียดการเดินทาง</span>
+        </div>
+
+        <div class="row g-4">
+
+          <div class="col-lg-4">
+            <label for="startDate" class="form-label">วันที่เริ่มใช้</label>
+            <input type="date" id="startDate" name="start_date" class="form-control" required>
+          </div>
+
+          <div class="col-lg-4">
+            <label for="endDate" class="form-label">วันที่สิ้นสุด</label>
+            <input type="date" id="endDate" name="end_date" class="form-control" required>
+          </div>
+
+          <div class="col-lg-4">
+            <label for="carSelect" class="form-label d-flex align-items-center justify-content-between">
+              <span>รถที่ต้องการใช้</span>
+              <span id="carHint" class="muted-pill">กรุณาเลือกวันไป – กลับก่อน</span>
+            </label>
+
+            <select id="carSelect" name="car" class="form-select" required disabled>
+              <option value="">-- กรุณาเลือกวันไป – กลับก่อน --</option>
+            </select>
+
+          </div>
+
+          <div class="col-lg-6">
+            <label class="form-label">ผู้สร้างคำขอ</label>
+            <input type="text" class="form-control fw-semibold"
+                   value="{{ request.user.get_full_name|default:request.user.username }}"
+                   readonly>
+          </div>
+
+          <div class="col-lg-3">
+            <label for="passengerCount" class="form-label">จำนวนผู้เดินทาง</label>
+            <input type="number" min="0" max="10"
+                   id="passengerCount" name="passenger_count"
+                   class="form-control" value="0">
+          </div>
+
+        </div>
+
+        <div class="row g-4 mt-2">
+          <div class="col-12">
+            <div class="row g-3" id="passengerContainer"></div>
+          </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+          <div class="col-12">
+            <label for="destination" class="form-label">สถานที่ไปราชการ</label>
+            <input type="text" id="destination" name="destination"
+                   class="form-control"
+                   placeholder="เช่น การไฟฟ้าส่วนภูมิภาค เขต 1 (อุดรธานี)" required>
+          </div>
+
+          <div class="col-12">
+            <label for="note" class="form-label">หมายเหตุเพิ่มเติม (ไม่จำเป็นต้องกรอก)</label>
+            <textarea id="note" name="note" rows="2" class="form-control"
+                      placeholder="รายละเอียดเพิ่มเติม"></textarea>
+          </div>
+        </div>
+
+        <div class="row mt-3">
+          <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-primary-rounded">
+              <i class="bi bi-plus-circle"></i>
+              เพิ่มการจอง
+            </button>
+          </div>
+        </div>
+
+        <script type="text/template" id="employeeOptionsTemplate">
+          <option value="">-- เลือกชื่อผู้เดินทาง --</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}">{{ emp.user.get_full_name|default:emp.user.username }}</option>
+          {% endfor %}
+        </script>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // -----------------------------
+  // ผู้เดินทาง (เดิม)
+  // -----------------------------
+  (function(){
+    const passengerCount = document.getElementById("passengerCount");
+    const container = document.getElementById("passengerContainer");
+    const tpl = document.getElementById("employeeOptionsTemplate").innerHTML;
+
+    function render(){
+      const n = parseInt(passengerCount.value || "0", 10);
+      container.innerHTML = "";
+      for(let i=1;i<=n;i++){
+        const col = document.createElement("div");
+        col.className = "col-md-6";
+        col.innerHTML = `
+          <label class="form-label">ผู้เดินทางคนที่ ${i}</label>
+          <select name="co_travelers" class="form-select">${tpl}</select>
+        `;
+        container.appendChild(col);
+      }
+    }
+    passengerCount.addEventListener("change", render);
+    render();
+  })();
+
+  // -----------------------------
+  // รถที่ว่างตามช่วงวันที่ (ใหม่)
+  // -----------------------------
+  (function(){
+    const startEl = document.getElementById("startDate");
+    const endEl   = document.getElementById("endDate");
+    const carSel  = document.getElementById("carSelect");
+    const carHint = document.getElementById("carHint");
+
+    function setLoading(){
+      carSel.disabled = true;
+      carSel.innerHTML = `<option value="">กำลังตรวจสอบรถที่ว่าง...</option>`;
+      carHint.textContent = "กำลังโหลด";
+    }
+
+    function setNeedDates(){
+      carSel.disabled = true;
+      carSel.innerHTML = `<option value="">-- กรุณาเลือกวันไป–กลับก่อน --</option>`;
+      carHint.textContent = "กรุณาเลือกวันไป–กลับก่อน";
+    }
+
+    function setNoCars(){
+      carSel.disabled = true;
+      carSel.innerHTML = `<option value="">ไม่มีรถว่างในช่วงวันที่เลือก</option>`;
+      carHint.textContent = "ไม่มีรถว่าง";
+    }
+
+    function setCars(cars){
+      carSel.disabled = false;
+      carSel.innerHTML = `<option value="">-- เลือกรถที่ต้องการใช้ --</option>`;
+      cars.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = `${c.plate_prefix} ${c.plate_number} (${c.brand_name} ${c.model_name})`;
+        carSel.appendChild(opt);
+      });
+      carHint.textContent = `รถว่าง ${cars.length} คัน`;
+    }
+
+    async function refreshCars(){
+      const start = startEl.value;
+      const end   = endEl.value;
+
+      if (!start || !end){
+        setNeedDates();
+        return;
+      }
+      if (end < start){
+        carSel.disabled = true;
+        carSel.innerHTML = `<option value="">วันสิ้นสุดต้องไม่ก่อนวันเริ่มใช้</option>`;
+        carHint.textContent = "วันไม่ถูกต้อง";
+        return;
+      }
+
+      setLoading();
+
+      const url = `{% url 'booking:api_available_cars' %}?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
+
+      try{
+        const res = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }});
+        const data = await res.json();
+
+        if (!data.ok){
+          setNeedDates();
+          return;
+        }
+        if (!data.cars || data.cars.length === 0){
+          setNoCars();
+          return;
+        }
+        setCars(data.cars);
+      }catch(err){
+        carSel.disabled = true;
+        carSel.innerHTML = `<option value="">โหลดรถไม่สำเร็จ (ลองใหม่อีกครั้ง)</option>`;
+        carHint.textContent = "เกิดข้อผิดพลาด";
+      }
+    }
+
+    startEl.addEventListener("change", refreshCars);
+    endEl.addEventListener("change", refreshCars);
+    document.addEventListener("DOMContentLoaded", refreshCars);
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "booking/base.html" %}
+{% load humanize %}
+
+{% block title %}แก้ไขข้อมูลการยืมรถ{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+
+  <!-- Header + ปุ่มกลับ -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-semibold mb-0">แก้ไขข้อมูลการยืมรถ</h3>
+
+    {# 🔹 ปุ่มย้อนกลับ: ถ้ามี next ให้กลับไปหน้ารายเดือน #}
+    <a href="{{ request.GET.next|default:request.META.HTTP_REFERER }}"
+       class="btn btn-outline-secondary btn-sm">
+       ย้อนกลับ
+    </a>
+  </div>
+
+  <form method="post" class="card shadow-sm border-0 rounded-4">
+    {% csrf_token %}
+
+    {# ⭐⭐ จุดสำคัญที่สุด: ใส่ hidden next ตรงนี้ ⭐⭐ #}
+    <input type="hidden" name="next" value="{{ request.GET.next }}">
+
+    <div class="card-body">
+
+
+      <div class="row g-3">
+
+        <!-- รถ -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">รถ</label>
+          <select name="car" class="form-select">
+            {% for car in cars %}
+              <option value="{{ car.id }}"
+                {% if car.id == booking.car.id %}selected{% endif %}>
+                {{ car.plate_prefix }} {{ car.plate_number }}
+                ({{ car.brand_name }} {{ car.model_name }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- ผู้สร้างคำขอ -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">ผู้สร้างคำขอ</label>
+          <input type="text"
+                 class="form-control"
+                 value="{{ booking.requester.get_full_name|default:booking.requester.username }}"
+                 disabled>
+        </div>
+
+        <!-- วันที่ -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">วันที่เริ่มใช้รถ</label>
+          <input type="date"
+                 name="start_date"
+                 class="form-control"
+                 value="{{ booking.start_date|date:'Y-m-d' }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">วันที่สิ้นสุด</label>
+          <input type="date"
+                 name="end_date"
+                 class="form-control"
+                 value="{{ booking.end_date|date:'Y-m-d' }}">
+        </div>
+
+        <!-- สถานที่ -->
+        <div class="col-12">
+          <label class="form-label fw-semibold">สถานที่ไปราชการ</label>
+          <textarea name="destination"
+                    class="form-control"
+                    rows="2">{{ booking.destination }}</textarea>
+        </div>
+
+        <!-- เลขไมล์ -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">เลขไมล์ก่อนใช้งาน</label>
+          <input type="number"
+                 name="odometer_before"
+                 class="form-control"
+                 value="{{ booking.odometer_before }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">เลขไมล์หลังใช้งาน</label>
+          <input type="number"
+                 name="odometer_after"
+                 class="form-control"
+                 value="{{ booking.odometer_after }}">
+        </div>
+
+        <!-- ผู้ส่งคืนรถ -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">ผู้ส่งคืนรถ</label>
+          <select name="returned_by" class="form-select">
+            <option value="">— ยังไม่ระบุ —</option>
+            {% for u in users %}
+              <option value="{{ u.id }}"
+                {% if booking.returned_by and booking.returned_by.id == u.id %}selected{% endif %}>
+                {{ u.get_full_name|default:u.username }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- ผู้ร่วมเดินทาง -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">ผู้ร่วมเดินทาง</label>
+          <select name="co_travelers"
+                  id="coTravelers"
+                  class="form-select"
+                  multiple
+                  size="1">
+            {% for p in profiles %}
+              <option value="{{ p.id }}"
+                {% if p in booking.co_travelers.all %}selected{% endif %}>
+                {{ p.user.get_full_name|default:p.user.username }}
+                {% if p.division %}
+                  ({{ p.division }})
+                {% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-text">
+            คลิกเพื่อเลือกหลายคน
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer bg-light d-flex justify-content-between">
+      {# 🔹 ปุ่มยกเลิก: กลับหน้าเดิมเหมือนกัน #}
+      <a href="{{ request.GET.next|default:request.META.HTTP_REFERER }}"
+         class="btn btn-secondary">
+        ยกเลิก
+      </a>
+
+      <button type="submit" class="btn btn-primary fw-semibold">
+        บันทึกการแก้ไข
+      </button>
+    </div>
+  </form>
+
+</div>
+
+<!-- JS ควบคุม select multiple ให้ไม่ค้าง -->
+<script>
+  const select = document.getElementById("coTravelers");
+
+  if (select) {
+    select.addEventListener("focus", () => {
+      select.size = 6;
+    });
+
+    select.addEventListener("change", () => {
+      select.size = 1;
+      select.blur();
+    });
+
+    select.addEventListener("blur", () => {
+      select.size = 1;
+    });
+  }
+</script>
+
+{% endblock %}

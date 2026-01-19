@@ -1,0 +1,167 @@
+{% extends "booking/base.html" %}
+{% load static %}
+
+{% block title %}บันทึกการเติมน้ำมัน - ระบบจองรถ{% endblock %}
+
+{% block extra_head %}
+  {{ block.super }}
+  <style>
+    body { background-color: #f5f7fb; }
+    .page-inner { margin-top: 2.5rem; margin-bottom: 4rem; }
+    .card-soft {
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.08);
+      background-color: #ffffff;
+    }
+    .section-title {
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: .2px;
+    }
+    .form-label { font-weight: 700; color: #334155; }
+    .empty-text { color: #64748b; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container page-inner">
+
+  <div class="card card-soft mb-4">
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h4 class="section-title mb-0">บันทึกการเติมน้ำมัน</h4>
+        {% if booking %}
+          <a class="btn btn-sm btn-outline-secondary"
+             href="{% url 'booking:user_return_car' %}?booking_id={{ booking.id }}">
+            กลับไปหน้าคืนรถ
+          </a>
+        {% endif %}
+      </div>
+
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+
+        {# ✅ สำคัญมาก: ทำให้ POST รอบ 2/3 ยังผูกเคสเดิม #}
+        {% if booking %}
+          <input type="hidden" name="booking_id" value="{{ booking.id }}">
+        {% endif %}
+
+        <div class="col-md-4">
+          <label class="form-label">ทะเบียนรถ</label>
+          {% if booking %}
+            <input class="form-control bg-light"
+                   value="{{ booking.car.plate_prefix }} {{ booking.car.plate_number }} {{ booking.car.province_full }}"
+                   readonly>
+            <input type="hidden" name="car_id" value="{{ booking.car.id }}">
+          {% else %}
+            <select name="car_id" class="form-select" required>
+              <option value="">-- เลือกทะเบียนรถ --</option>
+              {% for car in cars %}
+                <option value="{{ car.id }}">
+                  {{ car.plate_prefix }} {{ car.plate_number }} {{ car.province_full }}
+                </option>
+              {% endfor %}
+            </select>
+          {% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">เลข ยพ.</label>
+          <input type="text" name="yp_number"
+                 class="form-control"
+                 placeholder="เช่น 123456"
+                 value="">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">วันที่เติมน้ำมัน</label>
+          <input type="date" name="refill_date" class="form-control"
+                 value="{{ today|date:'Y-m-d' }}" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">เลขไมล์ (ก่อน/ตอนเติม)</label>
+          <input type="number" step="1" min="0"
+                 name="odometer" class="form-control"
+                 placeholder="เช่น 14349" required>
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">สถานที่เติมน้ำมัน</label>
+          <input type="text" name="fuel_place" class="form-control"
+                 placeholder="เช่น บริษัท ปิโตรเลียมไทยคอร์เปอรชั่น จำกัด (PT)" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">ราคาน้ำมันต่อลิตร (บาท)</label>
+          <input type="number" step="0.01" min="0"
+                 name="price_per_liter" class="form-control" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">จำนวนลิตร</label>
+          <input type="number" step="0.01" min="0"
+                 name="liters" class="form-control" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">ราคารวม (บาท)</label>
+          <input type="number" step="0.01" min="0"
+                 name="total_price" class="form-control" required>
+        </div>
+
+        <div class="col-12 d-flex justify-content-end gap-2">
+          <button type="submit" class="btn btn-primary px-4">บันทึกการเติมน้ำมัน</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <div class="card card-soft">
+    <div class="card-body">
+      <h5 class="section-title mb-3">รายการเติมน้ำมัน</h5>
+
+      {% if refills %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>วันที่</th>
+                <th>ทะเบียนรถ</th>
+                <th>สถานที่เติม</th>
+                <th>เลข ยพ.</th>
+                <th>ราคาต่อลิตร</th>
+                <th>จำนวนลิตร</th>
+                <th>ราคารวม</th>
+                <th>เลขไมล์</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in refills %}
+                <tr>
+                  <td>{{ f.refill_date|date:"d/m/Y" }}</td>
+                  <td>
+                    {{ f.car.plate_prefix }} {{ f.car.plate_number }} {{ f.car.province_full }}
+                  </td>
+                  <td>{{ f.fuel_place|default_if_none:"-" }}</td>
+                  <td>{{ f.yp_number|default_if_none:"-" }}</td>
+                  <td>{{ f.price_per_liter|default_if_none:"-" }}</td>
+                  <td>{{ f.liters|default_if_none:"-" }}</td>
+                  <td>{{ f.total_price|default_if_none:"-" }}</td>
+                  <td>{{ f.odometer|default:"-" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-text mb-0">ยังไม่มีรายการเติมน้ำมัน</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

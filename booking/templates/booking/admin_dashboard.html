@@ -1,0 +1,362 @@
+{% extends "booking/base.html" %}
+
+{% block title %}ภาพรวมการใช้งานรถ{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* หน้ากว้างพอดี ไม่เต็มจอ */
+  .dash-wrap{ max-width:1120px; }
+
+  /* ตารางดูสมดุล อ่านง่าย */
+  .dash-table{
+    font-size: .92rem;
+  }
+  .dash-table th{ white-space: nowrap; }
+  .dash-table td{ vertical-align: middle; }
+
+  .truncate-1{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width: 320px;
+    display:block;
+  }
+
+  /* ปุ่มในตาราง */
+  .dash-table .btn{
+    border-radius: 999px;
+    padding: .32rem .85rem;
+    font-size: .85rem;
+  }
+
+  /* ===== Modal: ให้ดูเป็นการ์ดอ่านง่าย ===== */
+  .modal-section{
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #fff;
+  }
+  .modal-label{
+    font-size: .82rem;
+    color:#64748b;
+    margin-bottom: 2px;
+  }
+  .badge-soft-purple{
+    background: rgba(116,4,95,0.10);
+    color:#74045F;
+    border: 1px solid rgba(116,4,95,0.18);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto py-4 dash-wrap">
+
+  <!-- หัวข้อ -->
+  <div class="text-center mb-4">
+    <h2 class="fw-semibold mb-1">ภาพรวมการใช้งานรถ</h2>
+    <p class="text-muted mb-0">สรุปสถานะรถและการยืมใช้ในวันนี้</p>
+  </div>
+
+  <!-- การ์ดสรุป 3 ใบ -->
+  <div class="row g-4 mb-4 align-items-stretch">
+
+    <!-- จำนวนรถทั้งหมด -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body d-flex flex-column align-items-center text-center py-4">
+          <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center mb-3"
+               style="width:72px;height:72px;">
+            <i class="bi bi-truck fs-3 text-primary"></i>
+          </div>
+
+          <div>
+            <div class="small text-muted mb-1">จำนวนรถทั้งหมด</div>
+            <div class="fw-bold" style="font-size:2rem;">{{ total_cars }}</div>
+          </div>
+
+          <div class="mt-auto pt-3">
+            <a href="{% url 'booking:admin_car_list' %}"
+               class="btn btn-outline-primary btn-sm rounded-pill px-4">
+              ดูรายละเอียดรถทั้งหมด
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ผู้ใช้งานทั้งหมด -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body d-flex flex-column align-items-center text-center py-4">
+          <div class="rounded-circle bg-success-subtle d-flex align-items-center justify-content-center mb-3"
+               style="width:72px;height:72px;">
+            <i class="bi bi-people-fill fs-3 text-success"></i>
+          </div>
+
+          <div>
+            <div class="small text-muted mb-1">ผู้ใช้งานทั้งหมด</div>
+            <div class="fw-bold" style="font-size:2rem;">{{ total_users }}</div>
+          </div>
+
+          <div class="mt-auto pt-3">
+            <a href="{% url 'booking:admin_employee_list' %}"
+               class="btn btn-outline-success btn-sm rounded-pill px-4">
+              จัดการรายชื่อพนักงาน
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ตรวจข้อมูลรายเดือน -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body d-flex flex-column align-items-center text-center py-4">
+
+          <!-- วงกลมไอคอน (ขนาดเท่าการ์ดอื่น) -->
+          <div class="rounded-circle d-flex align-items-center justify-content-center mb-3"
+              style="width:72px;height:72px;background:#E9D5FF;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="none" viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-5"
+                    stroke="#6D28D9"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
+              <path d="M20 12a8 8 0 1 1-16 0
+                      8 8 0 0 1 16 0Z"
+                    stroke="#6D28D9"
+                    stroke-width="2"/>
+            </svg>
+          </div>
+
+          <!-- ข้อความ -->
+          <div class="small text-muted mb-1">ข้อมูลการจองทั้งหมด</div>
+
+          <!-- ช่องตัวเลข (เว้นพื้นที่ให้เท่าการ์ดอื่น) -->
+          <div class="fw-bold" style="font-size:2rem; line-height:1;">
+            &nbsp;
+          </div>
+
+          <!-- ปุ่ม -->
+          <div class="mt-auto pt-3">
+            <a href="{% url 'booking:admin_monthly_audit' %}"
+              class="btn btn-outline-dark btn-sm rounded-pill px-4">
+              ตรวจสอบข้อมูล
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ตารางรายการวันนี้ -->
+  <div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body">
+
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-car-front-fill me-2 fs-5"></i>
+          <h5 class="mb-0">
+            รายการรถที่กำลังจองหรือใช้งานอยู่ในวันนี้
+            {% if today %}<span class="text-muted small">( {{ today|date:"d/m/Y" }} )</span>{% endif %}
+          </h5>
+        </div>
+      </div>
+
+      {% if active_bookings %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 dash-table">
+            <thead class="table-light">
+              <tr>
+                <th style="width:22%;">ทะเบียนรถ</th>
+                <th style="width:16%;">ผู้สร้างคำขอ</th>
+                <th class="text-nowrap" style="width:10%;">วันไป</th>
+                <th class="text-nowrap" style="width:10%;">วันกลับ</th>
+                <th>สถานที่ไปราชการ</th>
+                <th class="text-nowrap" style="width:10%;">สถานะ</th>
+                <th class="text-end" style="width:12%;">รายละเอียด</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for b in active_bookings %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">
+                    {{ b.car.plate_prefix }} {{ b.car.plate_number }} {{ b.car.province_full }}
+                  </div>
+                  <div class="small text-muted truncate-1">
+                    {{ b.car.brand_name }} {{ b.car.model_name }}
+                  </div>
+                </td>
+
+                <td>
+                  <div class="fw-semibold truncate-1">
+                    {{ b.requester.get_full_name|default:b.requester.username }}
+                  </div>
+                  <div class="small text-muted">{{ b.requester.username }}</div>
+                </td>
+
+                <td class="text-nowrap">{{ b.start_date|date:"d/m/Y" }}</td>
+                <td class="text-nowrap">{{ b.end_date|date:"d/m/Y" }}</td>
+
+                <td>
+                  <span class="truncate-1" title="{{ b.destination|default:'' }}">
+                    {{ b.destination|default:"-" }}
+                  </span>
+                </td>
+
+                <td class="text-nowrap">
+                  {% if b.status == "IN_USE" %}
+                    <span class="badge bg-info text-white rounded-pill px-3">กำลังใช้งาน</span>
+                  {% else %}
+                    <span class="badge bg-primary text-white rounded-pill px-3">จองแล้ว</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-end">
+                  <button type="button"
+                          class="btn btn-outline-primary btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#bookingModal{{ b.id }}">
+                    ดูรายละเอียด
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ✅ Modals -->
+        {% for b in active_bookings %}
+        <div class="modal fade" id="bookingModal{{ b.id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content rounded-4">
+
+              <div class="modal-header">
+                <h5 class="modal-title fw-semibold">รายละเอียดการยืมรถ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <div class="modal-body">
+                <div class="row g-3">
+
+                  <!-- รถ -->
+                  <div class="col-md-6">
+                    <div class="modal-section">
+                      <div class="modal-label">รถ</div>
+                      <div class="fw-semibold">
+                        {{ b.car.plate_prefix }} {{ b.car.plate_number }} {{ b.car.province_full }}
+                      </div>
+                      <div class="small text-muted">
+                        {{ b.car.brand_name }} {{ b.car.model_name }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- ผู้สร้างคำขอ (คนทำรายการ ไม่ใช่ผู้เดินทาง) -->
+                  <div class="col-md-6">
+                    <div class="modal-section">
+                      <div class="modal-label">ผู้สร้างคำขอ</div>
+                      <div class="fw-semibold">
+                        {{ b.requester.get_full_name|default:b.requester.username }}
+                      </div>
+                      <div class="small text-muted">{{ b.requester.username }}</div>
+                    </div>
+                  </div>
+
+                  <!-- วันไป -->
+                  <div class="col-md-6">
+                    <div class="modal-section">
+                      <div class="modal-label">วันที่ไป</div>
+                      <div>{{ b.start_date|date:"d/m/Y" }}</div>
+                    </div>
+                  </div>
+
+                  <!-- วันกลับ -->
+                  <div class="col-md-6">
+                    <div class="modal-section">
+                      <div class="modal-label">วันที่กลับ</div>
+                      <div>{{ b.end_date|date:"d/m/Y" }}</div>
+                    </div>
+                  </div>
+
+                  <!-- สถานที่ -->
+                  <div class="col-12">
+                    <div class="modal-section">
+                      <div class="modal-label">สถานที่ไปราชการ</div>
+                      <div>{{ b.destination|default:"-" }}</div>
+                    </div>
+                  </div>
+
+                  <!-- สถานะ -->
+                  <div class="col-md-6">
+                    <div class="modal-section">
+                      <div class="modal-label">สถานะ</div>
+                      {% if b.status == "IN_USE" %}
+                        <span class="badge bg-info text-white rounded-pill px-3">กำลังใช้งาน</span>
+                      {% else %}
+                        <span class="badge bg-primary text-white rounded-pill px-3">จองแล้ว</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- ✅ ผู้เดินทาง (นับเฉพาะที่เลือกในฟอร์ม, ไม่รวมผู้สร้างคำขอ) -->
+                  <div class="col-12">
+                    <div class="modal-section">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-semibold">ผู้เดินทาง</div>
+                        <div class="text-muted small">
+                          รวม {{ b.co_travelers.all.count }} คน
+                        </div>
+                      </div>
+
+                      {% if b.co_travelers.all.count > 0 %}
+                        <div class="mt-2">
+                          {% for p in b.co_travelers.all %}
+                            <div class="mb-1">
+                              <span class="badge rounded-pill badge-soft-purple">
+                                ผู้เดินทางคนที่ {{ forloop.counter }}
+                              </span>
+                              <span class="ms-2">
+                                {{ p.user.get_full_name|default:p.user.username }}
+                              </span>
+                              {% if p.division %}
+                                <span class="text-muted small ms-1">({{ p.division }})</span>
+                              {% endif %}
+                            </div>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        <div class="text-muted small">ไม่มีข้อมูลผู้เดินทาง</div>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+      {% else %}
+        <p class="text-muted text-center mb-0 py-3">
+          ยังไม่มีการจองหรือใช้งานในวันนี้
+        </p>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

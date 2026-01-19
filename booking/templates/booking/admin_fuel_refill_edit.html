@@ -1,0 +1,53 @@
+{% extends "booking/base.html" %}
+{% block title %}แก้ไขการเติมน้ำมัน{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+    <div class="card-header pea-header text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="fw-bold">แก้ไขการเติมน้ำมัน</div>
+        {% if next %}
+          <a class="btn btn-sm btn-light" href="{{ next }}">กลับ</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <div class="mb-3 small text-muted">
+        รถ: <span class="fw-semibold">{{ refill.car }}</span>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <div class="row g-3">
+          {% for field in form %}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+              {% endif %}
+              {% if field.errors %}
+                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          {% if next %}
+            <a class="btn btn-outline-secondary" href="{{ next }}">ยกเลิก</a>
+          {% endif %}
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

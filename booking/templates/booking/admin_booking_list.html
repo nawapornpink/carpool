@@ -1,0 +1,274 @@
+{% extends "booking/base.html" %}
+{% load humanize %}
+
+{% block title %}รายการยืม–คืนรถ{% endblock %}
+
+{% block extra_head %}
+<style>
+  .card{ border-radius:18px; overflow:hidden; }
+  .booking-table{ width:100%; table-layout:fixed; font-size:.92rem; }
+  .booking-table th,.booking-table td{ padding:.75rem .85rem; vertical-align:middle; overflow:hidden; }
+  .booking-table thead th{
+    position: sticky; top: 0; z-index: 2;
+    background:#f8fafc; border-bottom:1px solid rgba(0,0,0,.08);
+    font-weight:800; font-size:.88rem; white-space:nowrap;
+  }
+  .booking-table tbody tr{ border-bottom:1px solid rgba(0,0,0,.06); }
+  .booking-table tbody tr:hover{ background:#f1f5f9; }
+
+  .col-car{ width:170px; }
+  .col-user{ width:220px; }
+  .col-date{ width:190px; }
+  .col-status{ width:120px; }
+
+  /* ✅ ขยายคอลัมน์จัดการให้ปุ่มสวย ไม่บีบ */
+  .col-actions{ width: 260px; }
+
+  .text-sub{ font-size:.82rem; color:#64748b; }
+  .truncate-1{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .badge-pill{ border-radius:999px; padding:.42rem .7rem; font-weight:800; }
+  .btn-pill{ border-radius:999px; }
+
+  .action-group{ gap:.6rem !important; }
+
+  /* ✅ ปุ่มยกเลิกให้กว้างขึ้น + สีแดงนุ่ม ๆ */
+  .btn-cancel{
+    padding:.38rem .95rem;
+    border-radius:999px;
+    font-weight:800;
+    border-width:1px;
+  }
+  .btn-cancel-soft{
+    background:#fee2e2;
+    border-color:#fecaca;
+    color:#b91c1c;
+  }
+  .btn-cancel-soft:hover{
+    background:#fecaca;
+    border-color:#fca5a5;
+    color:#991b1b;
+  }
+
+  /* ✅ Filter bar */
+  .filter-card .form-label{ font-size:.82rem; margin-bottom:.25rem; color:#475569; font-weight:700; }
+  .filter-actions{ gap:.5rem; }
+  .btn-export{ white-space:nowrap; }
+
+  /* ✅ Summary cards */
+  .sum-card .label{ font-size:.82rem; color:#64748b; font-weight:700; }
+  .sum-card .num{ font-size:2.0rem; font-weight:900; line-height:1.0; }
+
+  .hint{ font-size:.82rem; color:#64748b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+
+  <!-- Header -->
+  <div class="mb-2">
+    <h3 class="fw-bold mb-1">รายการยืม–คืนรถ</h3>
+    <div class="text-muted">
+      รายการการจองและการคืนรถทั้งหมดของระบบ (ตรวจรายเดือน / ดาวน์โหลดเอกสารได้ในหน้าเดียว)
+    </div>
+  </div>
+
+  {# ✅ กันหน้าแตก: resolve url แบบปลอดภัย (ถ้าไม่มีจะไม่พัง) #}
+  {% url 'booking:export_fuel_excel' as fuel_excel_url %}
+  {% url 'booking:export_rent_word' as rent_word_url %}
+
+  <!-- ✅ FILTER BAR -->
+  <form method="get" class="card shadow-sm border-0 mb-3 filter-card">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+
+        <div class="col-6 col-md-2">
+          <label class="form-label">เดือน</label>
+          <select name="month" class="form-select">
+            {% for m in months %}
+              <option value="{{ m.value }}" {% if m.value == month %}selected{% endif %}>
+                {{ m.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label">ปี</label>
+          <input type="number" name="year" class="form-control" value="{{ year }}">
+        </div>
+
+        <div class="col-12 col-md-3">
+          <label class="form-label">ทะเบียนรถ</label>
+          <select name="car_id" class="form-select">
+            <option value="">รถทุกคัน</option>
+            {% for c in cars %}
+              <option value="{{ c.id }}" {% if c.id == selected_car_id %}selected{% endif %}>
+                {{ c.plate_prefix }} {{ c.plate_number }} {{ c.province_full }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12 col-md-5 text-end d-flex justify-content-md-end flex-wrap filter-actions">
+          <button class="btn btn-dark px-4" type="submit">ดูข้อมูล</button>
+
+          {% if fuel_excel_url %}
+            <a class="btn btn-outline-success btn-export"
+               href="{{ fuel_excel_url }}?month={{ month }}&year={{ year }}&car_id={{ selected_car_id|default:'' }}">
+              ดาวน์โหลด Excel น้ำมัน
+            </a>
+          {% endif %}
+
+          {% if rent_word_url %}
+            <a class="btn btn-outline-primary btn-export"
+               href="{{ rent_word_url }}?month={{ month }}&year={{ year }}&car_id={{ selected_car_id|default:'' }}">
+              ดาวน์โหลด Word รถเช่า
+            </a>
+          {% endif %}
+        </div>
+
+        <div class="col-12">
+          <div class="hint mt-1">
+            เลือกเดือน/ปี/รถ แล้วกด “ดูข้อมูล” ตารางด้านล่างจะเปลี่ยนตามเงื่อนไขทันที
+            {% if not fuel_excel_url or not rent_word_url %}
+              <span class="ms-1">
+                (ถ้าปุ่มดาวน์โหลดไม่ขึ้น แปลว่า name ใน urls.py ยังไม่ตรง ให้เปลี่ยนชื่อใน
+                {% verbatim %}{% url %}{% endverbatim %})
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+  <!-- ✅ SUMMARY -->
+  <div class="row g-2 mb-3">
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm border-0 sum-card">
+        <div class="card-body">
+          <div class="label">คืนแล้ว (RETURNED)</div>
+          <div class="num">{{ count_returned|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm border-0 sum-card">
+        <div class="card-body">
+          <div class="label">กำลังใช้งาน (IN_USE)</div>
+          <div class="num">{{ count_in_use|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm border-0 sum-card">
+        <div class="card-body">
+          <div class="label">ทั้งหมด</div>
+          <div class="num">{{ count_all|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Tabs เดิม (คงไว้) -->
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{% url 'booking:admin_booking_list' %}?status=all&month={{ month }}&year={{ year }}&car_id={{ selected_car_id|default:'' }}"
+       class="btn btn-sm btn-outline-primary btn-pill px-3 {% if status_filter == 'all' %}active{% endif %}">
+      ทั้งหมด
+    </a>
+
+    <a href="{% url 'booking:admin_booking_list' %}?status=book&month={{ month }}&year={{ year }}&car_id={{ selected_car_id|default:'' }}"
+       class="btn btn-sm btn-outline-primary btn-pill px-3 {% if status_filter == 'book' %}active{% endif %}">
+      เฉพาะการจอง
+    </a>
+
+    <a href="{% url 'booking:admin_booking_list' %}?status=return&month={{ month }}&year={{ year }}&car_id={{ selected_car_id|default:'' }}"
+       class="btn btn-sm btn-outline-primary btn-pill px-3 {% if status_filter == 'return' %}active{% endif %}">
+      เฉพาะรายการคืนรถ
+    </a>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card shadow-sm border-0">
+    <div>
+      <table class="table booking-table mb-0 align-middle">
+        <thead>
+          <tr>
+            <th class="col-car">ทะเบียนรถ</th>
+            <th class="col-user">ผู้สร้างคำขอ</th>
+            <th class="col-date">ช่วงวันที่</th>
+            <th class="col-status">สถานะ</th>
+            <th class="col-actions text-end pe-4">จัดการ</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% if bookings %}
+            {% for b in bookings %}
+              <tr>
+                <td>
+                  <div class="fw-semibold truncate-1">{{ b.car.plate_prefix }} {{ b.car.plate_number }}</div>
+                  <div class="text-sub truncate-1">{{ b.car.province_full }}</div>
+                </td>
+
+                <td>
+                  <div class="fw-semibold truncate-1">{{ b.requester.get_full_name|default:b.requester.username }}</div>
+                  <div class="text-sub truncate-1">{{ b.requester.username }}</div>
+                </td>
+
+                <td class="text-nowrap">{{ b.start_date|date:"d/m/Y" }} – {{ b.end_date|date:"d/m/Y" }}</td>
+
+                <td class="text-nowrap">
+                  {% if b.status == "BOOKED" %}
+                    <span class="badge bg-primary badge-pill">จองแล้ว</span>
+                  {% elif b.status == "IN_USE" %}
+                    <span class="badge bg-info text-dark badge-pill">กำลังใช้งาน</span>
+                  {% elif b.status == "RETURNED" %}
+                    <span class="badge bg-success badge-pill">คืนรถแล้ว</span>
+                  {% elif b.status == "CANCELLED" %}
+                    <span class="badge bg-secondary badge-pill">ยกเลิก</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark badge-pill">{{ b.status }}</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-end pe-4">
+                  <div class="d-inline-flex action-group">
+
+                    <a class="btn btn-sm btn-outline-primary btn-pill"
+                       href="{% url 'booking:admin_booking_detail' b.id %}">
+                      รายละเอียด
+                    </a>
+
+                    {% if b.status == "BOOKED" and b.can_cancel %}
+                      <a class="btn btn-sm btn-cancel btn-cancel-soft"
+                         href="{% url 'booking:cancel_booking' b.id %}"
+                         onclick="return confirm('ยืนยันการยกเลิกการจองนี้หรือไม่? (ต้องยกเลิกล่วงหน้าอย่างน้อย 1 วัน)');">
+                        ยกเลิกการจอง
+                      </a>
+                    {% endif %}
+
+                  </div>
+
+                  {% if b.status == "BOOKED" and not b.can_cancel %}
+                    <div class="text-sub mt-1">ยกเลิกไม่ได้ (ต้องยกเลิกล่วงหน้า ≥ 1 วัน)</div>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted">ยังไม่มีข้อมูล</td>
+            </tr>
+          {% endif %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

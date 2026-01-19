@@ -1,0 +1,235 @@
+{% extends "booking/base.html" %}
+{% load booking_extras %}
+{% block title %}ปฏิทินการจองรถ{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ===============================
+   CALENDAR – PEA THEME (FINAL)
+   =============================== */
+
+:root{
+  --pea-purple:#74045F;
+  --pea-gold:#C7911B;
+}
+
+/* ปิด style ลิงก์ฟ้า + ขีดเส้นใต้ */
+.calendar-wrap a,
+.calendar-wrap a:hover{
+  color:inherit !important;
+  text-decoration:none !important;
+}
+
+/* กล่องใหญ่ */
+.calendar-card{
+  background:#fff;
+  border-radius:24px;
+  box-shadow:0 18px 40px rgba(0,0,0,.08);
+  padding:18px;
+}
+
+/* ===== Header ===== */
+.cal-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:14px;
+}
+.cal-title{
+  font-size:1.25rem;
+  font-weight:900;
+}
+.cal-nav{
+  display:flex;
+  gap:8px;
+  margin-top:6px;
+}
+.cal-nav a{
+  width:46px;
+  height:40px;
+  border-radius:10px;
+  background:#1f2937;
+  color:#fff !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  font-weight:900;
+}
+.cal-month{
+  flex:1;
+  text-align:center;
+  font-size:2.1rem;
+  font-weight:1000;
+}
+.cal-today a{
+  background:#6b7280;
+  color:#fff !important;
+  padding:.5rem .9rem;
+  border-radius:999px;
+  font-weight:800;
+}
+
+/* ===== Calendar grid ===== */
+.calendar-wrap{
+  background:#f6f7fb;
+  border-radius:20px;
+  padding:14px;
+}
+
+/* วันในสัปดาห์ */
+.dow-row{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
+  margin-bottom:10px;
+}
+.dow{
+  text-align:center;
+  font-weight:900;
+  color:var(--pea-purple);
+}
+
+/* แถวสัปดาห์ */
+.week-row{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
+  margin-bottom:10px;
+}
+
+/* ช่องวัน */
+.day{
+  background:#fff;
+  border-radius:18px;
+  min-height:105px;
+  padding:10px;
+  border:1px solid rgba(0,0,0,.06);
+}
+.day.out{
+  background:#fbfcff;
+}
+.day.today{
+  background:rgba(199,145,27,.18);
+  border-color:rgba(199,145,27,.45);
+}
+
+/* เลขวัน */
+.day-num{
+  text-align:right;
+  font-weight:900;
+  font-size:.95rem;
+  color:#1f2937;
+  margin-bottom:6px;
+}
+.day.out .day-num{
+  color:#94a3b8;
+}
+
+/* รายการจอง */
+.booking-badge{
+  display:block;
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:.78rem;
+  font-weight:900;
+  color:#fff !important;
+  margin-bottom:6px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-card">
+
+  <!-- Header -->
+  <div class="cal-header">
+    <div>
+      <div class="cal-title">ปฏิทินการจองรถ</div>
+      <div class="cal-nav">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}">‹</a>
+        <a href="?year={{ next_year }}&month={{ next_month }}">›</a>
+      </div>
+    </div>
+
+    <div class="cal-month">
+      {{ month_name_th }} {{ year_th }}
+    </div>
+
+    <div class="cal-today">
+      <a href="?year={{ today.year }}&month={{ today.month }}">today</a>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="calendar-wrap">
+    <div class="dow-row">
+      <div class="dow">จ.</div>
+      <div class="dow">อ.</div>
+      <div class="dow">พ.</div>
+      <div class="dow">พฤ.</div>
+      <div class="dow">ศ.</div>
+      <div class="dow">ส.</div>
+      <div class="dow">อา.</div>
+    </div>
+
+    {% for week in weeks %}
+    <div class="week-row">
+      {% for day in week %}
+      <div class="day {% if day.month != month %}out{% endif %}{% if day == today %} today{% endif %}">
+        <div class="day-num">{{ day.day }}</div>
+
+        {% for b in bookings_by_day|dict_get:day %}
+        <div class="booking-badge"
+             style="background: {{ b.car.color_code }};"
+             data-bs-toggle="modal"
+             data-bs-target="#bookingDetailModal"
+             data-plate="{{ b.car.display_plate }}"
+             data-start="{{ b.start_date }}"
+             data-end="{{ b.end_date }}"
+             data-destination="{{ b.destination }}">
+          {{ b.car.plate_prefix }}{{ b.car.plate_number }} {{ b.car.province_full }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="bookingDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:18px;">
+      <div class="modal-header" style="background:var(--pea-purple);color:#fff;">
+        <h5 class="modal-title">รายละเอียดการจองรถ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                style="filter:invert(1)"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>ทะเบียน:</strong> <span id="m-plate"></span></p>
+        <p><strong>วันที่:</strong> <span id="m-date"></span></p>
+        <p><strong>ปลายทาง:</strong> <span id="m-dest"></span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", ()=>{
+  const modal = document.getElementById("bookingDetailModal");
+  modal.addEventListener("show.bs.modal", e=>{
+    const b = e.relatedTarget;
+    document.getElementById("m-plate").textContent = b.dataset.plate;
+    document.getElementById("m-date").textContent =
+      b.dataset.start + " – " + b.dataset.end;
+    document.getElementById("m-dest").textContent = b.dataset.destination || "-";
+  });
+});
+</script>
+{% endblock %}

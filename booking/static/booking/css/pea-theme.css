@@ -1,0 +1,353 @@
+:root{
+  --pea-purple: #74045F;
+  --pea-gold: #C7911B;
+  --pea-bg: #fbf7fb;
+  --pea-text: #2a1b28;
+  --pea-border: #ead7e6;
+}
+
+/* ----------------------
+   Base / Global
+   ---------------------- */
+html, body{
+  height: 100%;
+}
+body{
+  background: var(--pea-bg);
+  color: var(--pea-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+main .container{ /* ensure main containers use theme background */ }
+
+/* ----------------------
+   Navbar
+   ---------------------- */
+.navbar.pea-nav{
+  background: var(--pea-purple) !important;
+}
+.navbar.pea-nav .navbar-brand,
+.navbar.pea-nav .nav-link{
+  color: #fff !important;
+}
+.navbar.pea-nav .nav-link:hover,
+.navbar.pea-nav .nav-link.active{
+  color: var(--pea-gold) !important;
+}
+
+/* ----------------------
+   Buttons
+   ---------------------- */
+.btn-pea{
+  background: var(--pea-purple);
+  border-color: var(--pea-purple);
+  color: #fff;
+}
+.btn-pea:hover{
+  background: #5f034e;
+  border-color: #5f034e;
+  color: #fff;
+}
+
+.btn-pea-gold{
+  background: var(--pea-gold);
+  border-color: var(--pea-gold);
+  color: #2a1b28;
+  font-weight: 600;
+}
+
+.btn-logout-pea{
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,.85);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 600;
+  transition: all .18s ease;
+}
+.btn-logout-pea:hover{
+  background: rgba(199,145,27,.18);
+  border-color: var(--pea-gold);
+  color: #fff;
+}
+
+/* Small pill-style buttons (used in tables) */
+.btn.pea-btn-sm{
+  border-radius: 999px;
+  padding: .32rem .7rem;
+  font-weight: 700;
+}
+
+/* ----------------------
+   Cards
+   ---------------------- */
+.card.pea-card{
+  border: 1px solid var(--pea-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(116,4,95,.08);
+  background: #fff;
+}
+.section-card{
+  border: 1px solid var(--pea-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(116,4,95,.08);
+}
+
+.page-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: var(--pea-purple);
+}
+.section-title{
+  color: var(--pea-purple) !important;
+}
+
+/* ----------------------
+   Logo
+   ---------------------- */
+.pea-logo{
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ----------------------
+   Tables (theme) - pea-table + global main.table
+   ---------------------- */
+.table.pea-table,
+main .table{
+  background: #fff;
+  border-color: var(--pea-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.table.pea-table thead th,
+main .table thead th{
+  background: var(--pea-purple);
+  color: #fff;
+  border-color: rgba(255,255,255,.18);
+
+  /* ปรับให้บาลานซ์ */
+  padding: .6rem .75rem;      /* ↓ ลดความสูงแถบ */
+  font-weight: 600;           /* ↓ เบาลงนิด */
+  font-size: .9rem;           /* ↓ ให้ใกล้กับ tbody */
+  line-height: 1.25;          /* ↓ ไม่ให้ตัวหนังสือลอย */
+  
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+
+.table.pea-table tbody td,
+main .table tbody td{
+  vertical-align: middle;
+  border-color: var(--pea-border);
+}
+
+.table.pea-table tbody tr:nth-child(even),
+main .table tbody tr:nth-child(even){
+  background: rgba(116,4,95,.03);
+}
+
+.table.pea-table tbody tr:hover,
+main .table tbody tr:hover{
+  background: rgba(199,145,27,.10);
+}
+
+/* Ensure .table-light header does not override theme */
+main .table thead.table-light th{
+  background: var(--pea-purple) !important;
+  color: #fff !important;
+}
+
+/* ----------------------
+   Badges / Status
+   ---------------------- */
+.badge.pea-badge{
+  display: inline-block;
+  white-space: nowrap;
+
+  border-radius: 999px;
+  padding: .35rem .6rem;
+  font-weight: 700;
+}
+
+
+.pea-badge.status-booked{
+  background: rgba(116,4,95,.25) !important;
+  color: var(--pea-purple);
+}
+
+.pea-badge.status-inuse{
+  background: rgba(13,202,240,.28) !important;
+  color: #087990;
+}
+
+.pea-badge.status-returned{
+  background: rgba(25,135,84,.28) !important;
+  color: #198754;
+}
+
+.pea-badge.status-cancelled{
+  background: rgba(0,0,0,.14) !important;
+  color: #555;
+}
+
+.pea-badge.status-unknown{
+  background: rgba(0,0,0,.08) !important;
+  color: #333;
+}
+
+/* ----------------------
+   Calendar / FullCalendar
+   ---------------------- */
+/* Base variables for fullcalendar */
+.fc{
+  --fc-border-color: var(--pea-border);
+  --fc-today-bg-color: rgba(199,145,27,.14);
+  font-size: 14px;
+}
+
+/* Toolbar layout and title */
+.fc .fc-toolbar.fc-header-toolbar{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.fc .fc-toolbar-chunk {
+  margin-top: 10px;
+}
+
+.fc .fc-toolbar-title{
+  text-align: center;
+  color: var(--pea-purple);
+  font-weight: 900;
+  margin: 0;
+}
+
+/* Buttons */
+.fc .fc-button{
+  background: rgba(116,4,95,.10);
+  border: 1px solid var(--pea-border);
+  color: var(--pea-purple);
+  border-radius: 999px;
+  font-weight: 800;
+  padding: 6px 14px;
+}
+.fc .fc-button:hover{
+  background: rgba(199,145,27,.16);
+  border-color: rgba(199,145,27,.45);
+}
+.fc .fc-button-primary:not(:disabled).fc-button-active{
+  background: var(--pea-purple);
+  border-color: var(--pea-purple);
+  color: #fff;
+}
+
+/* Prev/Next spacing and shadow */
+.fc .fc-prev-button{ margin-right: 6px; }
+.fc .fc-next-button{ margin-left: 6px; }
+.fc .fc-prev-button,
+.fc .fc-next-button{ box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+
+/* Day numbers */
+.fc-theme-standard td,
+.fc-theme-standard th{ border-color: var(--pea-border); }
+.fc .fc-daygrid-day-number{ color: #5a3a56; font-weight: 700; }
+
+/* Events: pill style */
+.fc .fc-event{
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: .75rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,.10);
+  color: #fff;
+}
+
+/* Specific smaller tweaks */
+.fc .fc-button.fc-dayGridMonth-button{ background: rgba(116,4,95,.12) !important; color: var(--pea-purple) !important; border: 1px solid var(--pea-border) !important; }
+
+/* ----------------------
+   Calendar Card (component-specific)
+   ---------------------- */
+.calendar-card-header{
+  background: var(--pea-purple) !important;
+  color: #fff !important;
+  border-bottom: 3px solid var(--pea-gold) !important;
+  border-radius: 20px 20px 0 0 !important;
+  min-height: 64px !important;
+  padding: 14px 20px !important;
+  text-align: center;
+}
+.calendar-card-sub{ color: rgba(255,255,255,.88) !important; }
+.calendar-card-body{ background: #fff !important; }
+
+/* ----------------------
+   Utilities / small helpers
+   ---------------------- */
+.fc .fc-event .fc-event-title{ font-weight: 800; }
+
+/* ----------------------
+   Overrides / final fixes
+   ---------------------- */
+/* Prevent light header from breaking theme */
+main .table thead.table-light th{ background: var(--pea-purple) !important; color: #fff !important; }
+
+/* keep mt/bottom spacing consistent for pea components */
+/* End of file */
+
+
+/* =========================
+   Booking Form Card (theme)
+   ========================= */
+.pea-card-header,
+.booking-card-header,
+.card-header.pea-header {
+  background: var(--pea-purple) !important;
+  color: #fff !important;
+  border-bottom: 3px solid var(--pea-gold) !important;
+}
+
+/* ถ้าหัวกล่องใช้ bg-primary อยู่ ให้บังคับเป็นม่วง */
+.bg-primary {
+  background-color: var(--pea-purple) !important;
+}
+
+/* ปุ่มหลักให้เป็น PEA */
+.btn.btn-primary {
+  background: var(--pea-purple) !important;
+  border-color: var(--pea-purple) !important;
+  color: #fff !important;
+}
+.btn.btn-primary:hover {
+  background: #5f034e !important;
+  border-color: #5f034e !important;
+}
+
+/* ถ้าปุ่มมีไอคอนวงกลม (เช่น +) ให้ไม่เพี้ยน */
+.btn.btn-primary .bi {
+  color: #fff !important;
+}
+
+/* ดัน main ขึ้นให้ชิด navbar มากขึ้น */
+main.py-4 {
+  padding-top: 1.25rem !important; /* เดิม 1.5rem–3rem แล้วแต่ bootstrap */
+}
+
+/* ถ้าหน้านี้มี container ที่ใส่ mt-5/mt-4 ให้ลด */
+.booking-page .container,
+.container.booking-page {
+  margin-top: .75rem !important;
+}

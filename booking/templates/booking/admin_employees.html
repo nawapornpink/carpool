@@ -1,0 +1,74 @@
+{% extends 'booking/base.html' %}
+{% block title %}จัดการพนักงาน - ระบบจองรถ กดส.{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">จัดการรายชื่อพนักงาน</h3>
+
+<div class="card card-rounded shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title mb-0">
+        รายชื่อพนักงานทั้งหมด (EMP + ADM)
+      </h5>
+      <a href="{% url 'booking:admin_employee_create' %}" class="btn btn-primary btn-sm">
+        + เพิ่มพนักงานใหม่
+      </a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>รหัสพนักงาน</th>
+            <th>ชื่อ–สกุล</th>
+            <th>กอง/ฝ่าย</th>
+            <th>ตำแหน่ง</th>
+            <th>บทบาทในระบบ</th>
+            <th class="text-end">การจัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in profiles %}
+            <tr>
+              <td>{{ p.user.username }}</td>
+              <td>{{ p.user.get_full_name|default:"-" }}</td>
+              <td>{{ p.department|default:"-" }}</td>
+              <td>{{ p.position|default:"-" }}</td>
+              <td>
+                {% if p.role == 'ADM' %}
+                  <span class="badge bg-danger">ธุรการ</span>
+                {% else %}
+                  <span class="badge bg-secondary">พนักงาน</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{% url 'booking:admin_employee_edit' p.user.id %}"
+                  class="btn btn-outline-primary btn-sm">
+                  แก้ไข
+                </a>
+
+                <form method="post"
+                      action="{% url 'booking:admin_employee_delete' p.user.id %}"
+                      class="d-inline"
+                      onsubmit="return confirm('ยืนยันการลบผู้ใช้งานคนนี้หรือไม่?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm">
+                    ลบ
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted">
+                ยังไม่มีข้อมูลพนักงานในระบบ
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

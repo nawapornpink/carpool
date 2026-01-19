@@ -1,0 +1,135 @@
+{% extends 'booking/base.html' %}
+{% load form_extras %}
+
+{% block title %}
+  จัดการข้อมูลรถราชการ - ระบบจองรถ กดส.
+{% endblock %}
+
+{% block content %}
+  <div class="card shadow-sm border-0" style="border-radius: 20px;">
+    <div class="card-body p-4">
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} py-2">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" id="car-form">
+        {% csrf_token %}
+
+        <h5 class="mb-3 fw-semibold">เพิ่ม / แก้ไขข้อมูลรถ</h5>
+
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">หมวดอักษรทะเบียน</label>
+            {{ form.plate_prefix|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">เลขทะเบียนรถ</label>
+            {{ form.plate_number|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">จังหวัด</label>
+            {{ form.province_full|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">เลขไมล์ปัจจุบัน</label>
+            {{ form.current_odometer|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">ยี่ห้อรถ</label>
+            {{ form.brand_name|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">รุ่นรถ</label>
+            {{ form.model_name|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">สีสำหรับแสดงในปฏิทิน</label>
+            {{ form.color_code }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">สถานะรถ</label>
+            {{ form.status|add_class:'form-select' }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">จำนวนที่นั่ง</label>
+            {{ form.seat_count|add_class:'form-control' }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">ระบบเกียร์</label>
+            {{ form.gear_type|add_class:'form-select' }}
+          </div>
+
+          <div class="col-md-3 mt-3">
+            <label class="form-label">ประเภทการใช้งาน</label>
+            {{ form.usage_type|add_class:'form-select' }}
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="d-flex justify-content-between mt-4">
+          <div>
+            <a href="{% url 'booking:admin_car_list' %}"
+               class="btn btn-outline-primary px-4 me-2">
+              ย้อนกลับ
+            </a>
+
+            <!-- ✅ ล้างฟอร์มจริง -->
+            <button type="button"
+                    id="btnClearForm"
+                    class="btn btn-outline-danger px-4">
+              ล้างฟอร์ม
+            </button>
+          </div>
+
+          <div>
+            <button type="submit"
+                    class="btn px-4"
+                    style="background-color:#1a73e8; color:white;">
+              บันทึกข้อมูลรถ
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("car-form");
+      const clearBtn = document.getElementById("btnClearForm");
+
+      if (clearBtn && form) {
+        clearBtn.addEventListener("click", function () {
+
+          // ล้าง input / textarea
+          form.querySelectorAll("input").forEach(el => {
+            if (el.type === "color") {
+              el.value = "#ff4d8d"; // ค่า default สี (จะเปลี่ยนก็ได้)
+            } else if (el.type !== "hidden" && el.type !== "csrf") {
+              el.value = "";
+            }
+          });
+
+          // ล้าง select
+          form.querySelectorAll("select").forEach(sel => {
+            sel.selectedIndex = 0;
+          });
+        });
+      }
+    });
+  </script>
+{% endblock %}

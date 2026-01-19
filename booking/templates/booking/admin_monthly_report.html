@@ -1,0 +1,34 @@
+{% load booking_extras %}
+
+{% extends "booking/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>รายงานประจำเดือน (สำหรับแอดมิน)</h3>
+
+  <form method="get" class="row g-3 mt-3">
+    <div class="col-md-3">
+      <label>เดือน</label>
+      <select class="form-select">
+        <option>มกราคม</option>
+        <option>กุมภาพันธ์</option>
+        <!-- ใส่ครบทีหลัง -->
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label>ปี</label>
+      <select class="form-select">
+        <option>2568</option>
+        <option>2567</option>
+      </select>
+    </div>
+  </form>
+
+  <hr>
+
+  <p class="text-muted">
+    หน้านี้จะใช้สำหรับตรวจข้อมูล + ดาวน์โหลดเอกสาร Word / Excel
+  </p>
+</div>
+{% endblock %}

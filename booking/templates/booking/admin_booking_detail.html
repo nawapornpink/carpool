@@ -1,0 +1,222 @@
+{% extends "booking/base.html" %}
+{% load static humanize %}
+
+{% block title %}รายละเอียดการยืมรถ - DCT NE1 Carpool{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-semibold mb-0">รายละเอียดการยืมรถ</h3>
+    <div class="d-flex gap-2">
+      <a href="{% url 'booking:admin_booking_list' %}" class="btn btn-outline-secondary btn-sm">
+        ย้อนกลับ
+      </a>
+
+      <a href="{% url 'booking:admin_booking_edit' booking.id %}" class="btn btn-warning btn-sm shadow-sm">
+        แก้ไขข้อมูล
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== ข้อมูลการยืมรถ ===== -->
+  <div class="card shadow-sm border-0 rounded-4 mb-3">
+    <div class="card-body">
+
+      <!-- ❌ เอาเลข ยพ. ด้านบนออกแล้ว -->
+
+      <div class="row mb-2">
+        <div class="col-md-6">
+          <p class="mb-1">
+            <strong>รถ:</strong>
+            {{ booking.car.plate_prefix }} {{ booking.car.plate_number }}
+            ({{ booking.car.brand_name }} {{ booking.car.model_name }})
+          </p>
+
+          <p class="mb-1">
+            <strong>สถานะ:</strong>
+            {% if booking.status == "BOOKED" %}
+              <span class="badge bg-primary">จองแล้ว</span>
+            {% elif booking.status == "IN_USE" %}
+              <span class="badge bg-info text-dark">กำลังใช้งาน</span>
+            {% elif booking.status == "RETURNED" %}
+              <span class="badge bg-success">คืนรถแล้ว</span>
+            {% elif booking.status == "CANCELLED" %}
+              <span class="badge bg-secondary">ยกเลิก</span>
+            {% else %}
+              <span class="badge bg-light text-dark">{{ booking.status }}</span>
+            {% endif %}
+          </p>
+
+          <p class="mb-1">
+            <strong>ผู้สร้างคำขอ:</strong>
+            {{ booking.requester.get_full_name|default:booking.requester.username }}
+          </p>
+
+          <p class="mb-1">
+            <strong>ผู้ส่งคืนรถ:</strong>
+            {% if booking.returned_by %}
+              {{ booking.returned_by.get_full_name|default:booking.returned_by.username }}
+            {% else %}
+              <span class="text-muted">- ยังไม่คืนรถ -</span>
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="col-md-6">
+          <p class="mb-1">
+            <strong>ช่วงวันที่ใช้รถ:</strong><br>
+            {{ booking.start_date|date:"d/m/Y" }} – {{ booking.end_date|date:"d/m/Y" }}
+          </p>
+
+          <p class="mb-1">
+            <strong>สถานที่ไปราชการ:</strong><br>
+            {{ booking.destination|default:"-" }}
+          </p>
+
+          <p class="mb-1">
+            <strong>เลขไมล์ก่อนใช้งาน:</strong>
+            {% if booking.odometer_before %}
+              {{ booking.odometer_before|intcomma }}
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </p>
+
+          <p class="mb-1">
+            <strong>เลขไมล์หลังใช้งาน:</strong>
+            {% if booking.odometer_after %}
+              {{ booking.odometer_after|intcomma }}
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <p class="mb-0 text-muted small">
+        สร้างเมื่อ: {{ booking.created_at|date:"d/m/Y H:i" }} |
+        แก้ไขล่าสุด: {{ booking.updated_at|date:"d/m/Y H:i" }}
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== ผู้เดินทาง ===== -->
+  <div class="card shadow-sm border-0 rounded-4 mb-3">
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title mb-0">ผู้เดินทาง</h5>
+        <div class="text-muted small">
+          รวม {{ booking.co_travelers.all.count|add:1 }} คน
+        </div>
+      </div>
+
+      <!-- ผู้เดินทางคนที่ 1 -->
+      <div class="mb-3">
+        <span class="badge bg-dark">ผู้เดินทางคนที่ 1</span>
+        <span class="ms-2 fw-semibold">
+          {{ booking.requester.get_full_name|default:booking.requester.username }}
+        </span>
+        <div class="text-muted small mt-1">(ผู้สร้างคำขอ)</div>
+      </div>
+
+      <hr class="my-3">
+
+      <!-- ผู้เดินทางคนที่ 2..N -->
+      {% if booking.co_travelers.all.count > 0 %}
+        <div class="row g-2">
+          {% for p in booking.co_travelers.all %}
+            <div class="col-12 col-md-6">
+              <div class="p-2 rounded-3 border bg-light">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-primary">
+                    ผู้เดินทางคนที่ {{ forloop.counter|add:1 }}
+                  </span>
+                  <span class="fw-semibold">
+                    {{ p.user.get_full_name|default:p.user.username }}
+                  </span>
+                </div>
+
+                {% if p.division %}
+                  <div class="text-muted small mt-1">
+                    {{ p.division }}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted">ไม่มีผู้เดินทางเพิ่มเติม</div>
+      {% endif %}
+
+    </div>
+  </div>
+
+
+  <!-- ===== การเติมน้ำมัน ===== -->
+  <div class="card shadow-sm border-0 rounded-4 mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3">การเติมน้ำมันในทริปนี้</h5>
+
+      {% with fuel_list=booking.fuel_refills.all %}
+        {% if fuel_list and fuel_list.count > 0 %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>วันที่เติม</th>
+                  <th>เลขไมล์ตอนเติม</th>
+                  <th>จำนวนลิตร</th>
+                  <th>ราคารวม (บาท)</th>
+                  <th>ราคาต่อลิตร (บาท)</th>
+                  <th>สถานที่เติม</th>
+                  <th>เลขยพ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for f in fuel_list %}
+                  <tr>
+                    <td>{{ f.refill_date|date:"d/m/Y" }}</td>
+                    <td>{{ f.odometer|intcomma }}</td>
+                    <td>{{ f.liters }}</td>
+                    <td>{{ f.total_price }}</td>
+                    <td>
+                      {% if f.price_per_liter %}
+                        {{ f.price_per_liter }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ f.fuel_place|default:"-" }}</td>
+                    <td class="fw-semibold">
+                      {{ f.yp_number|default:"-" }}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">
+            ไม่มีข้อมูลการเติมน้ำมันสำหรับการยืมครั้งนี้ (จึงไม่มีเลขยพ)
+          </p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- ===== ปุ่มยกเลิกการจอง ===== -->
+  {% if booking.status == "BOOKED" %}
+    <div class="d-flex justify-content-end mt-3">
+      <a href="{% url 'booking:cancel_booking' booking.id %}"
+         class="btn btn-danger"
+         onclick="return confirm('ยืนยันการยกเลิกการจองนี้หรือไม่?');">
+        ยกเลิกการจอง
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

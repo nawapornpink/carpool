@@ -1,0 +1,1189 @@
+{% extends "booking/base.html" %}
+{% load booking_extras %}
+{% block title %}ตรวจสอบข้อมูล{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ✅ ปิดแถบเลื่อนแนวนอนของตาราง */
+  .table-responsive{ overflow-x: visible; }
+
+  /* ===== General ===== */
+  .card { border-radius: 18px; }
+  .badge-pill{ border-radius:999px; padding:.25rem .65rem; font-weight:700; font-size:.82rem; }
+
+  /* ===== Filter bar ===== */
+  .filter-row .form-select,
+  .filter-row .form-control,
+  .filter-row .btn{
+    height: 38px;
+  }
+  .filter-row .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 .9rem;
+  }
+  .filter-row .form-label{
+    margin-bottom:.25rem;
+    font-size:.82rem;
+    color:#475569;
+  }
+
+  /* ===== Pills ===== */
+  .pill-row .btn{
+    height: 34px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 .9rem;
+  }
+
+  /* =====================================================
+     ✅ TABLE: สไตล์ใหม่ (โปร่ง + อ่านง่าย + ดูเป็นระเบียบ)
+     ===================================================== */
+  .audit-table{
+    width:100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0 8px;             /* ช่องว่างระหว่างแถว */
+    font-size: .90rem;                  /* ลดขนาดตัวหนังสือลง */
+  }
+
+  .audit-table thead th{
+    background:#74045F;
+    color:#fff;
+    font-weight:700;
+    font-size:.88rem;
+    text-align:center;
+    vertical-align:middle;
+    padding:10px 10px;
+    border:0;
+    white-space: nowrap;
+  }
+  .audit-table thead th:first-child{ border-top-left-radius:12px; }
+  .audit-table thead th:last-child{ border-top-right-radius:12px; }
+
+  .audit-table tbody td{
+    background:#fff;
+    border-top:1px solid #eef2f7;
+    border-bottom:1px solid #eef2f7;
+    padding:10px 12px;                 /* เพิ่ม padding ให้โปร่งขึ้น */
+    vertical-align:middle;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .audit-table tbody tr td:first-child{
+    border-left:1px solid #eef2f7;
+    border-top-left-radius:12px;
+    border-bottom-left-radius:12px;
+  }
+  .audit-table tbody tr td:last-child{
+    border-right:1px solid #eef2f7;
+    border-top-right-radius:12px;
+    border-bottom-right-radius:12px;
+  }
+
+  .audit-table tbody tr:hover td{
+    background:#fbf7ff;                /* hover นุ่มๆ โทนม่วง */
+  }
+
+  /* ใช้ .nowrap ในคอลัมน์ที่อยากไม่ให้ตัดบรรทัด */
+  .audit-table .nowrap{ white-space: nowrap; }
+
+  /* ✅ ให้ "ชื่อ" อยู่บรรทัดเดียว / emp ลงบรรทัดล่าง */
+  .audit-table td .name{
+    font-weight:700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display:block;
+    line-height:1.15;
+  }
+  .audit-table td .subtext{
+    font-size:.78rem;
+    color:#64748b;
+    white-space: nowrap;
+    display:block;
+    margin-top:2px;
+  }
+
+  /* ข้อความยาว → ... (ปลายทาง) */
+  .audit-table .ellipsis{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;               /* ปลายทางให้อยู่บรรทัดเดียว ดูสะอาด */
+  }
+
+  /* ตัวเลข */
+  .audit-table .num{
+    text-align:right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ปุ่มในตาราง */
+  .audit-table .btn{
+    font-size:.84rem;
+    padding:.34rem .78rem;
+    line-height:1.1;
+  }
+
+  /* กล่องตารางให้ดูเป็นการ์ด */
+  .table-responsive{
+    border-radius:14px;
+    padding:4px;
+  }
+
+  /* ===== Table search (theme) ===== */
+  .search-meta{
+    white-space:nowrap;
+    color:#64748b;
+  }
+  .audit-tools{
+    flex-wrap:wrap;
+  }
+  .input-group-search{
+    width: 360px;
+    max-width: 100%;
+  }
+  .input-group-search .form-control{
+    min-width: 220px;
+  }
+
+  .input-group-search{
+    max-width: 420px;
+  }
+  .input-group-search .input-group-text{
+    background:#74045F;
+    color:#fff;
+    border-color:#74045F;
+    font-weight:700;
+  }
+  .input-group-search .form-control{
+    border-color:#e2e8f0;
+  }
+  .input-group-search .form-control:focus{
+    border-color:#74045F;
+    box-shadow:0 0 0 .2rem rgba(116,4,95,.15);
+  }
+  .btn-clear-search{
+    border:1px solid #74045F;
+    color:#74045F;
+    background:#fff;
+  }
+  .btn-clear-search:hover{
+    background:#74045F;
+    color:#fff;
+  }
+
+  /* ===== Audit header + search pill ===== */
+  .audit-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .audit-head .audit-title{ font-size:1rem; }
+  .audit-tools{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .search-meta{ white-space:nowrap; color:#64748b; font-size:.85rem; }
+
+  .search-input-wrap{
+    position:relative;
+    width: 340px;
+    max-width: 46vw;
+  }
+  .search-input{
+    width:100%;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background:#f8fafc;
+    padding: 0 34px 0 14px;
+    font-size:.88rem;
+  }
+  .search-input:focus{
+    background:#fff;
+    border-color: rgba(106,10,88,.35);
+    box-shadow:0 0 0 .2rem rgba(106,10,88,.08);
+  }
+  .search-clear-icon{
+    position:absolute;
+    right:8px;
+    top:50%;
+    transform:translateY(-50%);
+    width:24px;
+    height:24px;
+    border:0;
+    border-radius:999px;
+    background: transparent;
+    color:#94a3b8;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    display:none; /* โชว์เมื่อมีข้อความ */
+  }
+  .search-clear-icon:hover{ color:#6a0a58; background: rgba(106,10,88,.06); }
+
+  @media (max-width: 768px){
+    .search-input-wrap{ width:100%; max-width:100%; }
+  }
+
+  /* ===== Column balance (fixed table layout) ===== */
+  /* ปรับให้คอลัมน์ปุ่มด้านขวาไม่ชนขอบ/ไม่ตกกรอบ */
+  .booked-table th:nth-child(1), .booked-table td:nth-child(1){ width: 14%; }
+  .booked-table th:nth-child(2), .booked-table td:nth-child(2){ width: 18%; }
+  .booked-table th:nth-child(3), .booked-table td:nth-child(3){ width: 10%; }
+  .booked-table th:nth-child(4), .booked-table td:nth-child(4){ width: 10%; }
+  .booked-table th:nth-child(5), .booked-table td:nth-child(5){ width: 22%; }
+  .booked-table th:nth-child(6), .booked-table td:nth-child(6){ width: 10%; }
+  .booked-table th:nth-child(7), .booked-table td:nth-child(7){ width: 12%; }
+  .booked-table th:nth-child(8), .booked-table td:nth-child(8){ width: 8%; }
+
+  .returned-table th:nth-child(1), .returned-table td:nth-child(1){ width: 12%; }
+  .returned-table th:nth-child(2), .returned-table td:nth-child(2){ width: 16%; }
+  .returned-table th:nth-child(3), .returned-table td:nth-child(3){ width: 8%; }
+  .returned-table th:nth-child(4), .returned-table td:nth-child(4){ width: 8%; }
+
+  /* ✅ บีบ “ปลายทาง” นิดเดียว เพื่อเอาที่ให้ปุ่มขวาสุด */
+  .returned-table th:nth-child(5), .returned-table td:nth-child(5){ width: 17%; }
+
+  .returned-table th:nth-child(6), .returned-table td:nth-child(6){ width: 9%; }
+  .returned-table th:nth-child(7), .returned-table td:nth-child(7){ width: 9%; }
+  .returned-table th:nth-child(8), .returned-table td:nth-child(8){ width: 8%; }
+  .returned-table th:nth-child(9), .returned-table td:nth-child(9){ width: 7%; }
+  .returned-table th:nth-child(10), .returned-table td:nth-child(10){ width: 10%; }
+
+  /* ✅ ขยายคอลัมน์ “แก้ไข” จาก 6% -> 8% */
+  .returned-table th:nth-child(11), .returned-table td:nth-child(11){ width: 8%; }
+
+  /* ✅ จัดกึ่งกลางคอลัมน์ท้าย ๆ */
+  .audit-table td:nth-last-child(1),
+  .audit-table td:nth-last-child(2){
+    text-align:center;
+  }
+
+  /* ✅ กันปุ่มชนขอบขวาของแถวที่มุมโค้ง */
+  .audit-table tbody tr td:last-child{
+    padding-right: 16px;   /* เพิ่มที่ว่างด้านขวา */
+    overflow: hidden;      /* กันปุ่มล้นออกนอกกรอบโค้ง */
+  }
+
+  /* ✅ ทำปุ่มในคอลัมน์สุดท้ายให้กระชับขึ้นนิดนึง */
+  .audit-table tbody tr td:last-child .btn{
+    padding: .32rem .70rem;
+    white-space: nowrap;
+  }
+
+
+  /* Modal */
+  .modal .modal-content{ border-radius:18px; }
+  .modal .modal-header{ background:#74045F; color:#fff; }
+  .modal .btn-close{ filter:invert(1); }
+
+  /* ===== Table search ===== */
+  .input-group-search .input-group-text{ font-weight:700; }
+  .input-group-search .form-control{ height: 38px; }
+  .input-group-search .btn{ height: 38px; }
+
+  /* =====================================================
+     ✅ Fuel detail card (อ่านง่าย ไม่รก)
+     ===================================================== */
+  .fuel-card{
+    border:1px solid #eef2f7;
+    border-radius:14px;
+    background:#fff;
+    padding:.85rem .95rem;
+  }
+  .fuel-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .fuel-left{
+    font-size:.88rem;
+    color:#0f172a;
+  }
+  .fuel-left .muted{ color:#64748b; }
+  .fuel-left .line{ margin:.1rem 0; }
+
+  .fuel-right{
+    text-align:right;
+    min-width: 190px;
+  }
+  .fuel-right .label{
+    font-size:.82rem;
+    color:#64748b;
+    font-weight:700;
+  }
+  .fuel-right .amount{
+    font-size:1.15rem;
+    font-weight:1000;
+    color:#111827;
+    line-height:1.1;
+  }
+
+  @media (max-width: 576px){
+    .fuel-right{ min-width: 100%; text-align:left; }
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container mt-3">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+    <div>
+      <h3 class="mb-1 fw-bold">ตรวจสอบข้อมูล</h3>
+      <div class="text-muted small">
+        ใช้สำหรับตรวจรายการในเดือนที่เลือก เพื่อเช็คเลขไมล์ และการเติมน้ำมัน (รวมดูรายการจอง/ใช้งานได้ในหน้าเดียว)
+      </div>
+    </div>
+
+    <!-- Filter เดือน/ปี/รถ -->
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end filter-row">
+      <input type="hidden" name="tab" value="{{ tab|default:'audit' }}">
+      <input type="hidden" name="kind" value="{{ kind|default:'all' }}">
+
+      <!-- เดือน -->
+      <div>
+        <label class="form-label">เดือน</label>
+        <select name="month" class="form-select form-select-sm">
+          {% for i in "1,2,3,4,5,6,7,8,9,10,11,12"|split:"," %}
+            {% with mm=i|add:0 %}
+              <option value="{{ mm }}" {% if mm == month %}selected{% endif %}>{{ mm }}</option>
+            {% endwith %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- ปี -->
+      <div>
+        <label class="form-label">ปี</label>
+        <input type="number" name="year" class="form-control form-control-sm"
+               value="{{ year }}" style="width:110px;">
+      </div>
+
+      <!-- เลือกรถ -->
+      <div>
+        <label class="form-label">ทะเบียนรถ</label>
+        <select name="car_id" id="carSelect" class="form-select form-select-sm" style="min-width:260px;">
+          <option value="">รถทุกคัน</option>
+          {% for c in cars %}
+            <option value="{{ c.id }}" {% if selected_car_id and c.id == selected_car_id %}selected{% endif %}>
+              {{ c.plate_prefix }} {{ c.plate_number }} {{ c.province_full }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- ✅ ปุ่มดูข้อมูล -->
+      <button class="btn btn-dark btn-sm rounded-pill px-4" type="submit">ดูข้อมูล</button>
+
+      <!-- ดาวน์โหลด Excel/Word: บังคับให้เลือกรถก่อน -->
+      <button
+        type="button"
+        class="btn btn-outline-success btn-sm rounded-pill px-3 js-download"
+        data-base-url="{% url 'booking:admin_export_fuel_excel' %}"
+        data-filetype="excel">
+        ดาวน์โหลด Excel น้ำมัน
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm rounded-pill px-3 js-download"
+        data-base-url="{% url 'booking:admin_export_car_docx' %}"
+        data-filetype="docx">
+        ดาวน์โหลด Word รถเช่า
+      </button>
+    </form>
+  </div>
+
+  <!-- ✅ Summary Status -->
+  <div class="row g-3 mb-2">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+          <div class="text-muted small">คืนแล้ว</div>
+          <div class="fw-bold" style="font-size:2rem;">{{ count_returned|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+          <div class="text-muted small">กำลังใช้งาน</div>
+          <div class="fw-bold" style="font-size:2rem;">{{ count_in_use|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+          <div class="text-muted small">ทั้งหมด</div>
+          <div class="fw-bold" style="font-size:2rem;">{{ count_all|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Pills -->
+  <div class="d-flex gap-2 mb-3 pill-row">
+    <a class="btn btn-sm rounded-pill px-3 {% if kind|default:'all' == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+       href="?tab=audit&kind=all&month={{ month }}&year={{ year }}{% if selected_car_id %}&car_id={{ selected_car_id }}{% endif %}">
+      ทั้งหมด
+    </a>
+
+    <a class="btn btn-sm rounded-pill px-3 {% if kind == 'booked' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+       href="?tab=audit&kind=booked&month={{ month }}&year={{ year }}{% if selected_car_id %}&car_id={{ selected_car_id }}{% endif %}">
+      เฉพาะการจอง
+    </a>
+
+    <a class="btn btn-sm rounded-pill px-3 {% if kind == 'returned' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+       href="?tab=audit&kind=returned&month={{ month }}&year={{ year }}{% if selected_car_id %}&car_id={{ selected_car_id }}{% endif %}">
+      เฉพาะรายการคืนรถ
+    </a>
+  </div>
+
+  {% if kind == "booked" or kind == "all" %}
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body">
+      <div class="audit-head mb-2">
+        <div class="audit-title fw-bold">รายการจอง/ใช้งาน (เดือน {{ month }}/{{ year }})</div>
+        <div class="audit-tools">
+          <small id="metaBooked" class="search-meta"></small>
+          <div class="search-input-wrap">
+            <input id="searchBooked" type="text" class="search-input"
+                   placeholder="ค้นหาชื่อผู้จอง / ทะเบียนรถ / ปลายทาง / สถานะ"
+                   autocomplete="off">
+            <button id="clearBooked" class="search-clear-icon" type="button" aria-label="ล้าง">×</button>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {% if bookings_list %}
+        <div class="table-responsive">
+          <table class="table align-middle audit-table booked-table">
+            <thead>
+              <tr>
+                <th>ทะเบียนรถ</th>
+                <th>ผู้สร้างคำขอ</th>
+                <th class="nowrap">วันไป</th>
+                <th class="nowrap">วันกลับ</th>
+                <th>ปลายทาง</th>
+                <th class="nowrap">สถานะ</th>
+                <th class="nowrap">รายละเอียด</th>
+                <th class="nowrap">แก้ไข</th>
+              </tr>
+            </thead>
+            <tbody id="bookedTableBody">
+              {% for b in bookings_list %}
+              <tr>
+                <td>
+                  <div class="name">{{ b.car.plate_prefix }} {{ b.car.plate_number }}</div>
+                  <div class="subtext">{{ b.car.province_full }}</div>
+                </td>
+
+                <td>
+                  <div class="name">{{ b.requester.get_full_name|default:b.requester.username }}</div>
+                  <div class="subtext">{{ b.requester.username }}</div>
+                </td>
+
+                <td class="nowrap">{{ b.start_date|date:"d/m/Y" }}</td>
+                <td class="nowrap">{{ b.end_date|date:"d/m/Y" }}</td>
+
+                <td class="ellipsis" title="{{ b.destination|default:"-" }}">
+                  {{ b.destination|default:"-" }}
+                </td>
+
+                <td class="nowrap">
+                  {% if b.status == "IN_USE" %}
+                    <span class="badge bg-info text-white badge-pill">กำลังใช้งาน</span>
+                  {% elif b.status == "BOOKED" %}
+                    <span class="badge bg-primary text-white badge-pill">จองแล้ว</span>
+                  {% else %}
+                    <span class="badge bg-secondary text-white badge-pill">{{ b.status }}</span>
+                  {% endif %}
+                </td>
+
+                <td class="nowrap">
+                  <button class="btn btn-outline-primary btn-sm rounded-pill px-3"
+                          type="button"
+                          data-bs-toggle="modal"
+                          data-bs-target="#bookingDetailModal"
+                          data-booking-id="{{ b.id }}"
+                          data-destination="{{ b.destination|default:'-' }}"
+                          data-distance="-"
+                          data-fuel-count="0">
+                    ดูรายละเอียด
+                  </button>
+                </td>
+
+                <td class="nowrap">
+                  <a class="btn btn-outline-dark btn-sm rounded-pill px-3"
+                     href="{% url 'booking:admin_booking_edit' b.id %}">
+                    แก้ไข
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-light mb-0">
+          เดือนนี้ยังไม่มีรายการ “จอง/กำลังใช้งาน”
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if kind == "returned" or kind == "all" %}
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body">
+      <div class="audit-head mb-2">
+        <div class="audit-title fw-bold">รายการคืนรถ (เดือน {{ month }}/{{ year }})</div>
+        <div class="audit-tools">
+          <small id="metaReturned" class="search-meta"></small>
+          <div class="search-input-wrap">
+            <input id="searchReturned" type="text" class="search-input"
+                   placeholder="ค้นหาชื่อผู้จอง / ทะเบียนรถ / ปลายทาง / สถานะ"
+                   autocomplete="off">
+            <button id="clearReturned" class="search-clear-icon" type="button" aria-label="ล้าง">×</button>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {% if rows %}
+        <div class="table-responsive">
+          <table class="table align-middle audit-table returned-table">
+            <thead>
+              <tr>
+                <th>ทะเบียนรถ</th>
+                <th>ผู้สร้างคำขอ</th>
+                <th class="nowrap">วันไป</th>
+                <th class="nowrap">วันกลับ</th>
+                <th>ปลายทาง</th>
+                <th class="nowrap">เลขไมล์ก่อน</th>
+                <th class="nowrap">เลขไมล์หลัง</th>
+                <th class="nowrap">ระยะทาง</th>
+                <th class="nowrap">เติมน้ำมัน</th>
+                <th class="nowrap">รายละเอียด</th>
+                <th class="nowrap">แก้ไข</th>
+              </tr>
+            </thead>
+            <tbody id="returnedTableBody">
+              {% for r in rows %}
+                {% with b=r.b %}
+                <tr>
+                  <td>
+                    <div class="name">{{ b.car.plate_prefix }} {{ b.car.plate_number }}</div>
+                    <div class="subtext">{{ b.car.province_full }}</div>
+                  </td>
+
+                  <td>
+                    <div class="name">{{ b.requester.get_full_name|default:b.requester.username }}</div>
+                    <div class="subtext">{{ b.requester.username }}</div>
+                  </td>
+
+                  <td class="nowrap">{{ b.start_date|date:"d/m/Y" }}</td>
+                  <td class="nowrap">{{ b.end_date|date:"d/m/Y" }}</td>
+
+                  <td class="ellipsis" title="{{ b.destination|default:'-' }}">
+                    {{ b.destination|default:"-" }}
+                  </td>
+
+                  <td class="nowrap num">
+                    {% if b.odometer_before is None %}
+                      <span class="badge bg-warning text-dark badge-pill">ไม่ครบ</span>
+                    {% else %}
+                      {{ b.odometer_before }}
+                    {% endif %}
+                  </td>
+
+                  <td class="nowrap num">
+                    {% if b.odometer_after is None %}
+                      <span class="badge bg-warning text-dark badge-pill">ไม่ครบ</span>
+                    {% else %}
+                      {{ b.odometer_after }}
+                    {% endif %}
+                  </td>
+
+                  <td class="nowrap">
+                    {% if r.issue == "NEGATIVE" %}
+                      <span class="badge bg-danger badge-pill">ผิดปกติ</span>
+                    {% elif r.dist is None %}
+                      -
+                    {% else %}
+                      {{ r.dist }}
+                    {% endif %}
+                  </td>
+
+                  <td class="nowrap">
+                    {% if r.fuel_count|add:0 > 0 %}
+                      <button class="btn btn-success btn-sm badge-pill px-3"
+                              type="button"
+                              data-bs-toggle="collapse"
+                              data-bs-target="#fuel-{{ b.id }}"
+                              aria-expanded="false">
+                        มี {{ r.fuel_count }}
+                      </button>
+                    {% else %}
+                      <span class="badge bg-secondary badge-pill">ไม่มี</span>
+                    {% endif %}
+                  </td>
+
+                  <td class="nowrap">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3"
+                            type="button"
+                            data-bs-toggle="modal"
+                            data-bs-target="#bookingDetailModal"
+                            data-booking-id="{{ b.id }}"
+                            data-destination="{{ b.destination|default:'-' }}"
+                            data-distance="{% if r.dist is None %}-{% else %}{{ r.dist }}{% endif %}"
+                            data-fuel-count="{{ r.fuel_count|default:0 }}">
+                      ดูรายละเอียด
+                    </button>
+                  </td>
+
+                  <td class="nowrap">
+                    <a class="btn btn-outline-dark btn-sm rounded-pill px-3"
+                       href="{% url 'booking:admin_booking_edit' b.id %}">
+                      แก้ไข
+                    </a>
+                  </td>
+                </tr>
+
+                {% with frs=b.fuel_refills.all %}
+                  {% if frs|length > 0 %}
+                    <!-- ✅ Fuel detail (ใหม่: อ่านง่าย ไม่รก) -->
+                    <tr class="collapse" id="fuel-{{ b.id }}">
+                      <td colspan="11" class="bg-light" style="border-radius:14px;">
+                        <div class="small fw-bold mb-2">รายละเอียดเติมน้ำมัน (ของรายการนี้)</div>
+
+                        <div class="d-flex flex-column gap-2">
+                          {% for f in frs %}
+                          <div class="fuel-card" id="fuel-item-{{ f.id }}">
+                            <div class="fuel-row">
+
+                              <div class="fuel-left">
+                                <div class="line">
+                                  <span class="muted">เลขยพ</span>
+                                  <strong class="js-yp">{{ f.yp_number|default:"-" }}</strong>
+                                </div>
+
+                                <div class="line">
+                                  <span class="muted">สถานที่</span>
+                                  <strong class="js-place">{{ f.fuel_place|default:"-" }}</strong>
+                                  <span class="muted"> · เติมวันที่</span>
+                                  <strong class="js-date">{{ f.refill_date|date:"d/m/Y"|default:"-" }}</strong>
+                                </div>
+
+                                <div class="line">
+                                  <span class="muted">ราคาน้ำมัน/ลิตร</span>
+                                  <strong><span class="js-price">{{ f.price_per_liter|default:"-" }}</span></strong>
+                                  <span class="muted">บาท/ลิตร</span>
+
+                                  <span class="muted"> · จำนวน</span>
+                                  <strong><span class="js-liters">{{ f.liters|default:"-" }}</span></strong>
+                                  <span class="muted">ลิตร</span>
+                                </div>
+                              </div>
+
+                              <div class="fuel-right">
+                                <div class="label">รวมทั้งสิ้น</div>
+                                <div class="amount">
+                                  <span class="js-total">{{ f.total_price|default:"-" }}</span> บาท
+                                </div>
+
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-2"
+                                        type="button"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#fuelModal"
+                                        data-id="{{ f.id }}"
+                                        data-place="{{ f.fuel_place|default:'' }}"
+                                        data-yp="{{ f.yp_number|default:'' }}"
+                                        data-odo="{{ f.odometer|default:'' }}"
+                                        data-price="{{ f.price_per_liter|default:'' }}"
+                                        data-liters="{{ f.liters|default:'' }}"
+                                        data-total="{{ f.total_price|default:'' }}"
+                                        data-date="{{ f.refill_date|date:'Y-m-d'|default:'' }}">
+                                  แก้ไขเติมน้ำมัน
+                                </button>
+                              </div>
+
+                            </div>
+                          </div>
+                          {% endfor %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endwith %}
+
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-success mb-0">
+          เดือนนี้ยังไม่มีรายการ “คืนแล้ว” (RETURNED) ให้ตรวจสอบ
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ✅ Modal: รายละเอียดการจอง (ดูอย่างเดียว) -->
+<div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">รายละเอียดการจอง</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">รถ</label>
+            <input class="form-control" id="bd_car" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">ผู้สร้างคำขอ</label>
+            <input class="form-control" id="bd_requester" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">วันไป</label>
+            <input class="form-control" id="bd_start" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">วันกลับ</label>
+            <input class="form-control" id="bd_end" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">ผู้คืนรถ</label>
+            <input class="form-control" id="bd_returned_by" readonly>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">ปลายทาง</label>
+            <input class="form-control" id="bd_destination" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">เลขไมล์ก่อน</label>
+            <input class="form-control" id="bd_odo_before" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">เลขไมล์หลัง</label>
+            <input class="form-control" id="bd_odo_after" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">ระยะทาง</label>
+            <input class="form-control" id="bd_distance" readonly>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">ผู้เดินทาง</label>
+            <input class="form-control" id="bd_co_travelers" readonly>
+          </div>
+
+          <div class="col-md-12">
+            <div class="text-muted small">
+              เติมน้ำมันในรายการนี้: <span class="fw-bold" id="bd_fuel_count">0</span> รายการ
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal: เตือนให้เลือกรถก่อนดาวน์โหลด -->
+<div class="modal fade" id="requireCarModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ยังไม่ได้เลือกทะเบียนรถ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        กรุณาเลือก “ทะเบียนรถ” ก่อนดาวน์โหลดเอกสารรายเดือน
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal: แก้ไขเติมน้ำมันในหน้าเดิม -->
+<div class="modal fade" id="fuelModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">แก้ไขรายการเติมน้ำมัน</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form id="fuelForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" id="fuel_id" name="fuel_id" value="">
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">วันที่เติมน้ำมัน</label>
+              <input type="date" class="form-control" id="refill_date" name="refill_date">
+            </div>
+
+            <div class="col-md-8">
+              <label class="form-label">สถานที่เติมน้ำมัน</label>
+              <input type="text" class="form-control" id="fuel_place" name="fuel_place" placeholder="เช่น PTT / บางจาก">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">เลขยพ</label>
+              <input type="text" class="form-control" id="yp_number" name="yp_number" placeholder="เช่น ยพ-xxxx">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">เลขไมล์</label>
+              <input type="number" class="form-control" id="odometer" name="odometer" placeholder="ตัวเลขเท่านั้น">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">ราคาน้ำมันต่อลิตร</label>
+              <input type="number" step="0.01" class="form-control" id="price_per_liter" name="price_per_liter">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">จำนวนลิตร</label>
+              <input type="number" step="0.01" class="form-control" id="liters" name="liters">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">รวมราคา</label>
+              <input type="number" step="0.01" class="form-control" id="total_price" name="total_price">
+            </div>
+
+          <div class="alert alert-danger mt-3 d-none" id="fuelErr"></div>
+          <div class="alert alert-success mt-3 d-none" id="fuelOk"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+          <button type="submit" class="btn btn-primary rounded-pill px-4">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- helper: csrf ----------
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+
+  // ---------- download: ต้องเลือกรถก่อน ----------
+  document.querySelectorAll(".js-download").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const carId = document.getElementById("carSelect").value;
+      if (!carId) {
+        const modal = new bootstrap.Modal(document.getElementById("requireCarModal"));
+        modal.show();
+        return;
+      }
+
+      const baseUrl = btn.getAttribute("data-base-url");
+      const filetype = (btn.getAttribute("data-filetype") || "").toLowerCase(); // excel | docx
+
+      // ใช้เดือน/ปีจาก context ของหน้า (กันค่าเพี้ยน)
+      const month = "{{ month }}";
+      const year = "{{ year }}";
+
+      // ดึงทะเบียน + จังหวัดจาก dropdown (ข้อความใน option)
+      const opt = document.querySelector("#carSelect option:checked");
+      const plateText = (opt ? opt.textContent : "").trim();
+
+      // ทำให้ปลอดภัยเป็นชื่อไฟล์: เว้นวรรค -> _ และตัดอักขระต้องห้ามของ Windows
+      const safe = (s) => (s || "")
+        .replace(/\s+/g, "_")
+        .replace(/[\\/:*?\"<>|]/g, "");
+
+      const plateProvinceSafe = safe(plateText);
+
+      // ✅ ตั้งชื่อไฟล์ตามที่ต้องการ (ฝั่งหน้าเว็บกำหนดเอง ไม่ง้อ header)
+      let filename = "report";
+      if (filetype === "docx") {
+        filename = `กดส.ฉ.1_รายงานการใช้น้ำมันเชื้อเพลิง_ทะเบียน_${plateProvinceSafe}_ประจำเดือน_${month}_${year}.docx`;
+      } else if (filetype === "excel") {
+        filename = `กดส.ฉ.1_รายงานการใช้น้ำมันเชื้อเพลิง_ทะเบียน_${plateProvinceSafe}_ประจำเดือน_${month}_${year}.xlsx`;
+      }
+
+      const url = `${baseUrl}?${new URLSearchParams({ month, year, car_id: carId }).toString()}`;
+
+      // ดาวน์โหลดแบบ blob + ตั้งชื่อไฟล์เอง (แก้ชื่อเป็น download ให้หายขาด)
+      fetch(url)
+        .then(res => {
+          if (!res.ok) throw new Error("download failed");
+          return res.blob();
+        })
+        .then(blob => {
+          const a = document.createElement("a");
+          const blobUrl = window.URL.createObjectURL(blob);
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(blobUrl);
+        })
+        .catch(() => {
+          alert("ดาวน์โหลดไฟล์ไม่สำเร็จ");
+        });
+    });
+  });
+
+  // ---------- booking detail modal (โหลดจาก API) ----------
+  const bookingDetailModalEl = document.getElementById("bookingDetailModal");
+
+  bookingDetailModalEl.addEventListener("show.bs.modal", async (event) => {
+    const btn = event.relatedTarget;
+    const bookingId = btn?.getAttribute("data-booking-id");
+    if (!bookingId) return;
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = (val === null || val === undefined || val === "") ? "" : String(val);
+    };
+
+    setVal("bd_car", "");
+    setVal("bd_requester", "");
+    setVal("bd_start", "");
+    setVal("bd_end", "");
+    setVal("bd_returned_by", "");
+    setVal("bd_destination", btn.getAttribute("data-destination") || "-");
+    setVal("bd_odo_before", "");
+    setVal("bd_odo_after", "");
+    setVal("bd_distance", btn.getAttribute("data-distance") || "-");
+    setVal("bd_co_travelers", "-");
+    document.getElementById("bd_fuel_count").textContent = btn.getAttribute("data-fuel-count") || "0";
+
+    try {
+      const url = `{% url 'booking:admin_booking_detail_api' 0 %}`.replace("/0/", `/${bookingId}/`);
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (!resp.ok) return;
+
+      setVal("bd_car", data.car || "-");
+      setVal("bd_requester", data.user || "-");
+
+      if (data.date) {
+        const parts = data.date.split("–").map(s => s.trim());
+        setVal("bd_start", parts[0] || "-");
+        setVal("bd_end", parts[1] || "-");
+      }
+
+      setVal("bd_returned_by", data.returned_by || "-");
+      setVal("bd_odo_before", (data.odometer_before === null || data.odometer_before === undefined) ? "ไม่ครบ" : data.odometer_before);
+      setVal("bd_odo_after", (data.odometer_after === null || data.odometer_after === undefined) ? "ไม่ครบ" : data.odometer_after);
+
+      setVal("bd_destination", data.destination || btn.getAttribute("data-destination") || "-");
+      setVal("bd_distance", data.distance || btn.getAttribute("data-distance") || "-");
+
+      if (typeof data.fuel === "string") {
+        const m = data.fuel.match(/(\d+)/);
+        document.getElementById("bd_fuel_count").textContent = m ? m[1] : (data.fuel.includes("ไม่มี") ? "0" : data.fuel);
+      } else if (data.fuel_count !== undefined) {
+        document.getElementById("bd_fuel_count").textContent = String(data.fuel_count);
+      }
+
+      setVal("bd_co_travelers", data.co_travelers_text || "-");
+    } catch (e) {}
+  });
+
+  // ---------- modal fill (fuel) ----------
+  const fuelModalEl = document.getElementById("fuelModal");
+  fuelModalEl.addEventListener("show.bs.modal", (event) => {
+    const btn = event.relatedTarget;
+    document.getElementById("fuel_id").value = btn.getAttribute("data-id") || "";
+    document.getElementById("fuel_place").value = btn.getAttribute("data-place") || "";
+    document.getElementById("yp_number").value = btn.getAttribute("data-yp") || "";
+    document.getElementById("odometer").value = btn.getAttribute("data-odo") || "";
+    document.getElementById("price_per_liter").value = btn.getAttribute("data-price") || "";
+    document.getElementById("liters").value = btn.getAttribute("data-liters") || "";
+    document.getElementById("total_price").value = btn.getAttribute("data-total") || "";
+    document.getElementById("refill_date").value = btn.getAttribute("data-date") || "";
+
+    document.getElementById("fuelErr").classList.add("d-none");
+    document.getElementById("fuelOk").classList.add("d-none");
+  });
+
+  // ---------- submit: save inline ----------
+  document.getElementById("fuelForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fuelId = document.getElementById("fuel_id").value;
+    const url = `{% url 'booking:admin_fuel_refill_update_ajax' 0 %}`.replace("/0/", `/${fuelId}/`);
+
+    const payload = {
+      refill_date: document.getElementById("refill_date").value,
+      fuel_place: document.getElementById("fuel_place").value,
+      yp_number: document.getElementById("yp_number").value,
+      odometer: document.getElementById("odometer").value,
+      price_per_liter: document.getElementById("price_per_liter").value,
+      liters: document.getElementById("liters").value,
+      total_price: document.getElementById("total_price").value,
+    };
+
+    const errBox = document.getElementById("fuelErr");
+    const okBox = document.getElementById("fuelOk");
+    errBox.classList.add("d-none");
+    okBox.classList.add("d-none");
+
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await resp.json();
+      if (!resp.ok || data.ok === false) {
+        errBox.textContent = data.error || "บันทึกไม่สำเร็จ";
+        errBox.classList.remove("d-none");
+        return;
+      }
+
+      const item = document.getElementById(`fuel-item-${fuelId}`);
+      if (item) {
+        if (data.fuel_place !== undefined) item.querySelector(".js-place").textContent = data.fuel_place || "-";
+        if (data.yp_number !== undefined) item.querySelector(".js-yp").textContent = data.yp_number || "-";
+        if (data.odometer !== undefined) item.querySelector(".js-odo") && (item.querySelector(".js-odo").textContent = data.odometer || "-");
+        if (data.price_per_liter !== undefined) item.querySelector(".js-price").textContent = data.price_per_liter || "-";
+        if (data.liters !== undefined) item.querySelector(".js-liters").textContent = data.liters || "-";
+        if (data.total_price !== undefined) item.querySelector(".js-total").textContent = data.total_price || "-";
+        if (data.refill_date_th !== undefined) item.querySelector(".js-date").textContent = data.refill_date_th || "-";
+      }
+
+      okBox.textContent = "บันทึกเรียบร้อย";
+      okBox.classList.remove("d-none");
+
+      setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(fuelModalEl);
+        modal.hide();
+      }, 650);
+
+    } catch (ex) {
+      errBox.textContent = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+      errBox.classList.remove("d-none");
+    }
+  });
+
+  // ---------- table search (filter rows in-place) ----------
+  function _normText(s){
+    return (s || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function attachTableSearch(opts){
+    const input = document.getElementById(opts.inputId);
+    const btnClear = document.getElementById(opts.clearId);
+    const tbody = document.getElementById(opts.tbodyId);
+    const meta = document.getElementById(opts.metaId);
+    if (!input || !tbody) return;
+
+    // เฉพาะแถวข้อมูลจริง (กันกรณีมี <tr class="collapse"> ในตารางคืนรถ)
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(tr => !tr.classList.contains("collapse"));
+    const total = rows.length;
+
+    function apply(){
+      const q = _normText(input.value);
+      let shown = 0;
+
+      if (btnClear) btnClear.style.display = q ? "inline-flex" : "none";
+
+      rows.forEach(tr => {
+        const hay = _normText(tr.innerText);
+        const ok = !q || hay.includes(q);
+        tr.style.display = ok ? "" : "none";
+        if (ok) shown++;
+
+        // ถ้าเป็นตารางคืนรถ: ซ่อนแถวรายละเอียดเติมน้ำมันที่พ่วงอยู่ด้วย (collapse row ถัดไป)
+        if (opts.hideLinkedCollapse) {
+          const next = tr.nextElementSibling;
+          if (next && next.classList.contains("collapse")) {
+            next.style.display = ok ? "" : "none";
+          }
+        }
+      });
+
+      if (meta) {
+        meta.textContent = q ? `แสดง ${shown} / ${total} รายการ` : `ทั้งหมด ${total} รายการ`;
+      }
+    }
+
+    let t = null;
+    input.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(apply, 80);
+    });
+
+    btnClear && btnClear.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+      apply();
+    });
+
+    apply();
+  }
+
+  // init searches (ถ้าตารางนั้นถูกแสดงอยู่ในหน้า)
+  attachTableSearch({
+    inputId: "searchBooked",
+    clearId: "clearBooked",
+    metaId: "metaBooked",
+    tbodyId: "bookedTableBody",
+    hideLinkedCollapse: false
+  });
+
+  attachTableSearch({
+    inputId: "searchReturned",
+    clearId: "clearReturned",
+    metaId: "metaReturned",
+    tbodyId: "returnedTableBody",
+    hideLinkedCollapse: true
+  });
+</script>
+
+{% endblock %}
