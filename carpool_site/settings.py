@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -9,7 +10,8 @@ SECRET_KEY = 'django-insecure-faxltd4$f_q2b3ju)c&^)9e%+2!l6hr22!bu38&hbqg)(9ukwk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['172.16.100.131']
+
 
 
 # Application definition
@@ -100,6 +102,7 @@ USE_TZ = True
 
 
 # Static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

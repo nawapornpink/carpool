@@ -10,8 +10,6 @@ from .models import Profile, Car
 DIVISION_CHOICES = [
     ("", "--- เลือกกอง ---"),
     ("กดส.", "กองดิจิทัลและการสื่อสาร"),
-    ("กอก.", "กองอำนวยการ"),
-    ("อื่นๆ", "อื่น ๆ"),
 ]
 
 DEPARTMENT_CHOICES = [

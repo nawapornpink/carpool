@@ -694,7 +694,7 @@ def user_fuel_refill(request):
         return back()
 
     if not fuel_place:
-        messages.error(request, "กรุณากรอกสถานที่เติมน้ำมัน")
+        messages.error(request, "กรุณากรอกสถานที่เติมน้ำมัน 697")
         return back()
 
     if not yp_number:
@@ -708,7 +708,7 @@ def user_fuel_refill(request):
     try:
         odometer_int = int(odometer)
     except (TypeError, ValueError):
-        messages.error(request, "เลขไมล์ต้องเป็นตัวเลข")
+        messages.error(request, "เลขไมล์ต้องเป็นตัวเลข 711")
         return back()
 
     if price_per_liter is None:
@@ -1513,7 +1513,7 @@ def admin_fuel_refill_edit(request, refill_id: int):
         try:
             refill.odometer = int(request.POST.get("odometer"))
         except (TypeError, ValueError):
-            messages.error(request, "เลขไมล์ต้องเป็นตัวเลข")
+            messages.error(request, "เลขไมล์ต้องเป็นตัวเลข 1516")
             return redirect("booking:admin_fuel_refill_edit", refill_id=refill.id)
 
         refill.price_per_liter = _to_decimal(request.POST.get("price_per_liter"))
@@ -1700,53 +1700,57 @@ def admin_export_car_docx(request):
 
 @admin_required
 @require_POST
+
 def admin_fuel_refill_update_ajax(request, refill_id: int):
     refill = get_object_or_404(FuelRefill, id=refill_id)
 
-    refill.fuel_place = (request.POST.get("fuel_place") or "").strip()
-    refill.yp_number = (request.POST.get("yp_number") or "").strip()
+    def get_str(name: str):
+        v = request.POST.get(name, None)
+        if v is None:
+            return None
+        v = v.strip()
+        return v if v != "" else None
 
-    # เลขไมล์
-    odo_raw = (request.POST.get("odometer") or "").strip()
-    try:
-        refill.odometer = int(odo_raw)
-    except (TypeError, ValueError):
-        return JsonResponse({"ok": False, "error": "เลขไมล์ต้องเป็นตัวเลข"}, status=400)
+    def get_int(name: str):
+        v = request.POST.get(name, None)
+        if v is None:
+            return None
+        v = v.strip()
+        if v == "":
+            return None
+        # กัน 8,400 หรือ 8400 กม.
+        v_clean = v.replace(",", "")
+        if not v_clean.isdigit():
+            return "__INVALID__"
+        return int(v_clean)
 
-    # decimal (ยอมให้ว่างได้ -> None)
-    refill.price_per_liter = _to_decimal(request.POST.get("price_per_liter"))
-    refill.liters = _to_decimal(request.POST.get("liters"))
-    refill.total_price = _to_decimal(request.POST.get("total_price"))
+    # ✅ อ่านค่าที่ส่งมา (ส่งมาก็อัปเดต ไม่ส่งมาก็ไม่ยุ่ง)
+    od_before = get_int("odometer_before")
+    od_after  = get_int("odometer_after")
+    fuel_place = get_str("fuel_place")
 
-    # วันที่ (ยอมให้ว่างได้)
-    raw_date = (request.POST.get("refill_date") or "").strip()
-    if raw_date:
-        parsed = parse_date(str(raw_date))
-        if not parsed:
-            return JsonResponse({"ok": False, "error": "รูปแบบวันที่ไม่ถูกต้อง"}, status=400)
-        refill.refill_date = parsed
+    # ✅ validate เฉพาะฟิลด์ที่ส่งมา
+    if od_before == "__INVALID__" or od_after == "__INVALID__":
+        return JsonResponse({"ok": False, "message": "เลขไมล์ต้องเป็นตัวเลขเท่านั้น"}, status=400)
 
-    if not refill.fuel_place:
-        return JsonResponse({"ok": False, "error": "กรุณากรอกสถานที่เติมน้ำมัน"}, status=400)
-    if not refill.yp_number:
-        return JsonResponse({"ok": False, "error": "กรุณากรอกเลขยพ"}, status=400)
+    changed = False
+
+    if od_before is not None and od_before != refill.odometer_before:
+        refill.odometer_before = od_before
+        changed = True
+
+    # ถ้าโมเดลเตงไม่มี odometer_after ให้ลบบล็อกนี้ทิ้ง
+    if hasattr(refill, "odometer_after") and od_after is not None and od_after != getattr(refill, "odometer_after", None):
+        refill.odometer_after = od_after
+        changed = True
+
+    # ✅ สำคัญ: อย่าไปบังคับ fuel_place ถ้าไม่ได้ส่งมา
+    if fuel_place is not None and fuel_place != (refill.fuel_place or ""):
+        refill.fuel_place = fuel_place
+        changed = True
+
+    if not changed:
+        return JsonResponse({"ok": True, "message": "ไม่มีข้อมูลเปลี่ยนแปลง"})
 
     refill.save()
-
-    # ส่งค่ากลับไปอัปเดตหน้า (inline)
-    refill_date_th = "-"
-    if refill.refill_date:
-        refill_date_th = refill.refill_date.strftime("%d/%m/%Y")
-
-    return JsonResponse(
-        {
-            "ok": True,
-            "fuel_place": refill.fuel_place or "-",
-            "yp_number": refill.yp_number or "-",
-            "odometer": refill.odometer if refill.odometer is not None else "-",
-            "price_per_liter": str(refill.price_per_liter) if refill.price_per_liter is not None else "-",
-            "liters": str(refill.liters) if refill.liters is not None else "-",
-            "total_price": str(refill.total_price) if refill.total_price is not None else "-",
-            "refill_date_th": refill_date_th,
-        }
-    )
+    return JsonResponse({"ok": True, "message": "บันทึกการแก้ไขเรียบร้อยแล้ว"})
