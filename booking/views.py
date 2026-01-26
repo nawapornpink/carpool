@@ -30,7 +30,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 import booking
-
+import json
 # -----------------------------
 # Local
 # -----------------------------
@@ -1700,57 +1700,88 @@ def admin_export_car_docx(request):
 
 @admin_required
 @require_POST
-
 def admin_fuel_refill_update_ajax(request, refill_id: int):
+    """อัปเดต FuelRefill แบบ inline (AJAX)
+
+    รองรับทั้ง 2 รูปแบบ:
+    - fetch ส่ง JSON (Content-Type: application/json)  ✅ ใช้ใน admin_monthly_audit.html
+    - form POST ปกติ (application/x-www-form-urlencoded / multipart)  ✅ เผื่อใช้ที่อื่น
+    """
     refill = get_object_or_404(FuelRefill, id=refill_id)
 
-    def get_str(name: str):
-        v = request.POST.get(name, None)
-        if v is None:
-            return None
-        v = v.strip()
-        return v if v != "" else None
+    # -----------------------------
+    # 1) รับ payload ให้ได้ทั้ง JSON และ form
+    # -----------------------------
+    payload = None
+    ct = (request.content_type or "").lower()
 
-    def get_int(name: str):
-        v = request.POST.get(name, None)
-        if v is None:
-            return None
-        v = v.strip()
-        if v == "":
-            return None
-        # กัน 8,400 หรือ 8400 กม.
-        v_clean = v.replace(",", "")
-        if not v_clean.isdigit():
-            return "__INVALID__"
-        return int(v_clean)
+    if "application/json" in ct:
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+        except Exception:
+            return JsonResponse(
+                {"ok": False, "error": "รูปแบบข้อมูลไม่ถูกต้อง (JSON)"},
+                status=400,
+            )
+    else:
+        payload = request.POST
 
-    # ✅ อ่านค่าที่ส่งมา (ส่งมาก็อัปเดต ไม่ส่งมาก็ไม่ยุ่ง)
-    od_before = get_int("odometer_before")
-    od_after  = get_int("odometer_after")
-    fuel_place = get_str("fuel_place")
+    def _get(key: str) -> str:
+        val = payload.get(key) if hasattr(payload, "get") else None
+        if val is None:
+            return ""
+        return str(val).strip()
 
-    # ✅ validate เฉพาะฟิลด์ที่ส่งมา
-    if od_before == "__INVALID__" or od_after == "__INVALID__":
-        return JsonResponse({"ok": False, "message": "เลขไมล์ต้องเป็นตัวเลขเท่านั้น"}, status=400)
+    # -----------------------------
+    # 2) mapping + validate
+    # -----------------------------
+    refill.fuel_place = _get("fuel_place")
+    refill.yp_number = _get("yp_number")
 
-    changed = False
+    odo_raw = _get("odometer")
+    if not odo_raw:
+        return JsonResponse({"ok": False, "error": "กรุณากรอกเลขไมล์"}, status=400)
+    try:
+        refill.odometer = int(odo_raw)
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "เลขไมล์ต้องเป็นตัวเลข"}, status=400)
 
-    if od_before is not None and od_before != refill.odometer_before:
-        refill.odometer_before = od_before
-        changed = True
+    # decimal (ยอมให้ว่างได้ -> None)
+    refill.price_per_liter = _to_decimal(_get("price_per_liter"))
+    refill.liters = _to_decimal(_get("liters"))
+    refill.total_price = _to_decimal(_get("total_price"))
 
-    # ถ้าโมเดลเตงไม่มี odometer_after ให้ลบบล็อกนี้ทิ้ง
-    if hasattr(refill, "odometer_after") and od_after is not None and od_after != getattr(refill, "odometer_after", None):
-        refill.odometer_after = od_after
-        changed = True
+    # วันที่ (ยอมให้ว่างได้)
+    raw_date = _get("refill_date")
+    if raw_date:
+        parsed = parse_date(raw_date)
+        if not parsed:
+            return JsonResponse({"ok": False, "error": "รูปแบบวันที่ไม่ถูกต้อง"}, status=400)
+        refill.refill_date = parsed
 
-    # ✅ สำคัญ: อย่าไปบังคับ fuel_place ถ้าไม่ได้ส่งมา
-    if fuel_place is not None and fuel_place != (refill.fuel_place or ""):
-        refill.fuel_place = fuel_place
-        changed = True
+    if not refill.fuel_place:
+        return JsonResponse({"ok": False, "error": "กรุณากรอกสถานที่เติมน้ำมัน"}, status=400)
+    if not refill.yp_number:
+        return JsonResponse({"ok": False, "error": "กรุณากรอกเลขยพ"}, status=400)
 
-    if not changed:
-        return JsonResponse({"ok": True, "message": "ไม่มีข้อมูลเปลี่ยนแปลง"})
-
+    # -----------------------------
+    # 3) save + response
+    # -----------------------------
     refill.save()
-    return JsonResponse({"ok": True, "message": "บันทึกการแก้ไขเรียบร้อยแล้ว"})
+
+    refill_date_th = "-"
+    if refill.refill_date:
+        refill_date_th = refill.refill_date.strftime("%d/%m/%Y")
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "fuel_place": refill.fuel_place or "-",
+            "yp_number": refill.yp_number or "-",
+            "odometer": refill.odometer if refill.odometer is not None else "-",
+            "price_per_liter": str(refill.price_per_liter) if refill.price_per_liter is not None else "-",
+            "liters": str(refill.liters) if refill.liters is not None else "-",
+            "total_price": str(refill.total_price) if refill.total_price is not None else "-",
+            "refill_date_th": refill_date_th,
+        }
+    )
