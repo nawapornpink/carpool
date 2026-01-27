@@ -61,17 +61,7 @@
                   <a href="{% url 'booking:admin_car_edit' c.id %}" class="btn btn-outline-primary btn-sm">
                     แก้ไข
                   </a>
-
-                  <form method="post"
-                        action="{% url 'booking:admin_car_delete' c.id %}"
-                        class="d-inline"
-                        onsubmit="return confirm('ยืนยันการลบรถคันนี้หรือไม่?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                      ลบ
-                    </button>
-                  </form>
-                </td>
+              </td>
             </tr>
           {% empty %}
             <tr>

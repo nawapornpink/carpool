@@ -11,6 +11,7 @@ SECRET_KEY = 'django-insecure-faxltd4$f_q2b3ju)c&^)9e%+2!l6hr22!bu38&hbqg)(9ukwk
 DEBUG = True
 
 ALLOWED_HOSTS = ['172.16.100.131']
+ALLOWED_HOSTS = ["127.0.0.1","localhost",]
 
 
 

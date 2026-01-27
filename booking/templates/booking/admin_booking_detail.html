@@ -101,59 +101,58 @@
     </div>
   </div>
 
-  <!-- ===== ผู้เดินทาง ===== -->
-  <div class="card shadow-sm border-0 rounded-4 mb-3">
-    <div class="card-body">
+<div class="row g-2">
 
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="card-title mb-0">ผู้เดินทาง</h5>
-        <div class="text-muted small">
-          รวม {{ booking.co_travelers.all.count|add:1 }} คน
-        </div>
-      </div>
-
-      <!-- ผู้เดินทางคนที่ 1 -->
-      <div class="mb-3">
-        <span class="badge bg-dark">ผู้เดินทางคนที่ 1</span>
-        <span class="ms-2 fw-semibold">
+  <!-- ผู้สร้างคำขอ -->
+  <div class="col-12 col-md-6">
+    <div class="p-2 rounded-3 border bg-light">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-dark">ผู้สร้างคำขอ</span>
+        <span class="fw-semibold">
           {{ booking.requester.get_full_name|default:booking.requester.username }}
         </span>
-        <div class="text-muted small mt-1">(ผู้สร้างคำขอ)</div>
       </div>
 
-      <hr class="my-3">
-
-      <!-- ผู้เดินทางคนที่ 2..N -->
-      {% if booking.co_travelers.all.count > 0 %}
-        <div class="row g-2">
-          {% for p in booking.co_travelers.all %}
-            <div class="col-12 col-md-6">
-              <div class="p-2 rounded-3 border bg-light">
-                <div class="d-flex align-items-center gap-2">
-                  <span class="badge bg-primary">
-                    ผู้เดินทางคนที่ {{ forloop.counter|add:1 }}
-                  </span>
-                  <span class="fw-semibold">
-                    {{ p.user.get_full_name|default:p.user.username }}
-                  </span>
-                </div>
-
-                {% if p.division %}
-                  <div class="text-muted small mt-1">
-                    {{ p.division }}
-                  </div>
-                {% endif %}
-              </div>
-            </div>
-          {% endfor %}
+      {# ให้แสดง division แบบเดียวกับคนอื่น ถ้าไม่มีให้เว้นที่เท่ากัน #}
+      {% if booking.requester.profile.division %}
+        <div class="text-muted small mt-1">
+          {{ booking.requester.profile.division }}
         </div>
       {% else %}
-        <div class="text-muted">ไม่มีผู้เดินทางเพิ่มเติม</div>
+        <div class="text-muted small mt-1" style="visibility:hidden;">-</div>
       {% endif %}
-
     </div>
   </div>
 
+  <!-- ผู้เดินทางคนที่ 2..N -->
+  {% for p in booking.co_travelers.all %}
+    <div class="col-12 col-md-6">
+      <div class="p-2 rounded-3 border bg-light">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-primary">
+            ผู้เดินทางคนที่ {{ forloop.counter|add:1 }}
+          </span>
+          <span class="fw-semibold">
+            {{ p.user.get_full_name|default:p.user.username }}
+          </span>
+        </div>
+
+        {% if p.division %}
+          <div class="text-muted small mt-1">
+            {{ p.division }}
+          </div>
+        {% else %}
+          <div class="text-muted small mt-1" style="visibility:hidden;">-</div>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="text-muted">ไม่มีผู้เดินทางเพิ่มเติม</div>
+    </div>
+  {% endfor %}
+
+</div>
 
   <!-- ===== การเติมน้ำมัน ===== -->
   <div class="card shadow-sm border-0 rounded-4 mb-3">

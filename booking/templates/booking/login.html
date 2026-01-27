@@ -1,17 +1,22 @@
 {% extends 'booking/base.html' %}
+{% load static %}
+
 {% block title %}เข้าสู่ระบบ - DCT NE1 Carpool{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-center align-items-start pt-5">
   <div class="card shadow-sm" style="min-width: 380px; border-radius: 18px;">
     <div class="card-body p-4">
-      <h4 class="text-center mb-3">
-        <i class="bi bi-box-arrow-in-right me-1"></i>
-        เข้าสู่ระบบ
-      </h4>
-      <p class="text-center text-muted small mb-4">
-        ใช้รหัสพนักงานและรหัสผ่านเดียวกับระบบการไฟฟ้า (จำลอง)
-      </p>
+      <div class="text-center mb-3">
+        <img
+          src="{% static 'booking/img/pea_logo.png' %}"
+          alt="การไฟฟ้าส่วนภูมิภาค"
+          style="height:72px"
+          class="mb-2"
+        >
+        <div class="fw-bold fs-5">เข้าสู่ระบบ</div>
+      </div>
+
 
       {% if messages %}
         {% for message in messages %}

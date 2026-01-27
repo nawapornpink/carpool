@@ -28,9 +28,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
+from django.db.models import Case, When, Value, IntegerField
 
 import booking
 import json
+
 # -----------------------------
 # Local
 # -----------------------------
@@ -837,14 +839,18 @@ def admin_dashboard(request):
 
 @admin_required
 def admin_employee_list(request):
-    """
-    แสดงรายชื่อพนักงานทั้งหมด (EMP + ADM)
-    ใช้ Profile เป็นหลัก เพื่อให้ดึง role / division / department / position ได้
-    """
-    profiles = Profile.objects.select_related("user").order_by("user__username")
-
+    profiles = (
+        Profile.objects.select_related("user")
+        .annotate(
+            status_rank=Case(
+                When(work_status="ACTIVE", then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("status_rank", "user__username")
+    )
     return render(request, "booking/admin_employees.html", {"profiles": profiles})
-
 
 @admin_required
 def admin_employee_create(request):
@@ -882,6 +888,22 @@ def admin_employee_create(request):
     return render(
         request, "booking/admin_employee_form.html", {"form": form, "mode": "create"}
     )
+
+@admin_required
+@require_POST
+def admin_employee_toggle_status(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+
+    if profile.work_status == "ACTIVE":
+        profile.work_status = "INACTIVE"
+        msg = f"{profile.user.get_full_name()} ถูกปรับเป็นพ้นสภาพแล้ว"
+    else:
+        profile.work_status = "ACTIVE"
+        msg = f"{profile.user.get_full_name()} กลับมาปฏิบัติงานแล้ว"
+
+    profile.save(update_fields=["work_status"])
+    messages.success(request, msg)
+    return redirect("booking:admin_employee_list")
 
 
 @admin_required
@@ -935,27 +957,39 @@ def admin_employee_edit(request, user_id: int):
 
 
 @admin_required
-def admin_employee_delete(request, user_id: int):
+def admin_employee_delete(request, user_id):
     user = get_object_or_404(User, id=user_id)
+    profile = getattr(user, "profile", None)
+
     if request.method == "POST":
-        user.delete()
-        messages.success(request, "ลบพนักงานเรียบร้อย")
+        # ปิดการใช้งาน user
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+
+        # (ถ้ามี role / status)
+        if profile:
+            profile.role = "INACTIVE"   # หรือเก็บ field status เพิ่ม
+            profile.save(update_fields=["role"])
+
+        messages.success(request, "ปิดการใช้งานพนักงานเรียบร้อย")
     return redirect("booking:admin_employee_list")
+
 
 
 @admin_required
 def admin_car_list(request):
-    q = (request.GET.get("q") or "").strip()
-    cars = Car.objects.all().order_by("plate_prefix", "plate_number")
-    if q:
-        cars = cars.filter(
-            Q(plate_prefix__icontains=q)
-            | Q(plate_number__icontains=q)
-            | Q(province_full__icontains=q)
-            | Q(brand_name__icontains=q)
-            | Q(model_name__icontains=q)
+    cars = (
+        Car.objects.all()
+        .annotate(
+            status_rank=Case(
+                When(status="RETIRED", then=Value(1)),  # ยกเลิกใช้งานลงล่าง
+                default=Value(0),
+                output_field=IntegerField(),
+            )
         )
-    return render(request, "booking/admin_cars.html", {"cars": cars, "q": q})
+        .order_by("status_rank", "plate_prefix", "plate_number")
+    )
+    return render(request, "booking/admin_cars.html", {"cars": cars})
 
 
 @admin_required
@@ -985,13 +1019,17 @@ def admin_car_edit(request, car_id: int):
     )
 
 
+@login_required
 @admin_required
-def admin_car_delete(request, car_id: int):
+def admin_car_delete(request, car_id):
     car = get_object_or_404(Car, id=car_id)
-    if request.method == "POST":
-        car.delete()
-        messages.success(request, "ลบรถเรียบร้อย")
-    return redirect("booking:admin_car_list")
+
+    # ✅ ไม่ลบแล้ว เปลี่ยนเป็นยกเลิกใช้งาน
+    car.status = "RETIRED"   # หรือ "OUT_OF_SERVICE"
+    car.save(update_fields=["status"])
+
+    messages.success(request, "ยกเลิกใช้งานรถคันนี้เรียบร้อยแล้ว")
+    return redirect("booking:admin_car_list")  # ใช้ชื่อ url list 
 
 
 # =============================================================================
@@ -1784,4 +1822,8 @@ def admin_fuel_refill_update_ajax(request, refill_id: int):
             "total_price": str(refill.total_price) if refill.total_price is not None else "-",
             "refill_date_th": refill_date_th,
         }
+<<<<<<< HEAD
     )
+=======
+    )
+>>>>>>> 1dd83bc (แกไขการแกไขเตมนำมนเพมสถานะพนกงานพนสภาพ และจดเรยงพรอมแกไขรายการรถ/พนกงาน)

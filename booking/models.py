@@ -16,9 +16,18 @@ class Profile(models.Model):
     ]
     role = models.CharField(max_length=3, choices=ROLE_CHOICES, default="EMP")
 
+    WORK_STATUS_CHOICES = [
+        ("ACTIVE", "ปฏิบัติงานอยู่"),
+        ("INACTIVE", "พ้นสภาพ"),
+    ]
+    work_status = models.CharField(
+        max_length=10,
+        choices=WORK_STATUS_CHOICES,
+        default="ACTIVE"
+    )
+
     def __str__(self):
-        full_name = self.user.get_full_name()
-        return full_name if full_name else self.user.username
+        return self.user.get_full_name() or self.user.username
 
 
 class Car(models.Model):
